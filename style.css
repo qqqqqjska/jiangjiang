@@ -96,6 +96,33 @@
         padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important;
     }
 
+    body.ios-standalone .chat-bottom-nav,
+    body.ios-standalone .multi-select-bar,
+    body.ios-standalone .floating-dock {
+        bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 14px)) !important;
+    }
+
+    body.ios-standalone .chat-bottom-nav {
+        padding-bottom: 12px !important;
+    }
+
+    body.ios-standalone .bottom-nav {
+        padding-bottom: 5px !important;
+    }
+
+    body.ios-standalone .wb-bottom-nav,
+    body.ios-standalone .sticker-mgr-bottom-bar {
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    body.ios-standalone .conv-bottom-container {
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    }
+
+    body.ios-standalone #mf-comment-bar {
+        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    }
+
     /* 针对所有滚动区域启用硬件加速和流畅滚动 */
     .chat-content-area, #add-contact-page, #settings-page, #api-settings-page, #nai-settings-page, #keep-alive-settings-page, .wb-content-area, .conv-messages-area, .conv-drawer, #role-profile-page, .beautify-content, .sticker-grid, .sticker-drawer-tabs, .wb-grid {
         -webkit-overflow-scrolling: touch;
