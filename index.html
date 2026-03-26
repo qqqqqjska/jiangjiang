@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AI Home">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>AI Home Screen</title>
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style id="custom-font-style-tag"></style>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<div class="phone-screen" id="phone-screen">
+    <div id="home-screen-page">
+        <div class="home-swiper">
+            <!-- Page 1 -->
+            <div class="home-page" id="home-page-1">
+                <div class="capsule-widget" id="capsule-widget-bg">
+                    <label for="upload-capsule-bg" class="capsule-bg-btn"><i class='bx bx-image-add'></i></label>
+                    <div class="capsule-content">
+                        <div class="capsule-left">
+                            <label for="upload-capsule-avatar">
+                                <div class="capsule-avatar" id="image-target-capsule-avatar"></div>
+                            </label>
+                            <div class="capsule-motto-area">
+                                <span class="capsule-motto" id="capsule-motto-id" contenteditable="true">Love U</span>
+                                <span class="capsule-date" id="capsule-date-id" contenteditable="true">03月21日 星期六</span>
+                            </div>
+                        </div>
+                        <div class="capsule-right">
+                            <div class="capsule-top-right">
+                                <span class="capsule-battery-text">Battery <span id="battery-level">100%</span> <i id="battery-icon" class='bx bxs-battery'></i></span>
+                            </div>
+                            <div id="time" class="capsule-time">10:00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="middle-row">
+                    <div class="left-col">
+                        <div class="avatar-motto-widget">
+                            <div class="amw-avatar-container">
+                                <label for="upload-small-rounded">
+                                    <div class="amw-avatar" id="image-target-small-rounded">
+                                        <i class='bx bx-plus empty-icon' style="font-size: 24px; color: #aaa;"></i>
+                                    </div>
+                                </label>
+                                <div class="amw-avatar-sticker">🩶</div>
+                            </div>
+                            <div class="amw-motto-lines">
+                                <div class="amw-line-wide" id="amw-motto-wide" contenteditable="true" spellcheck="false">My Friend</div>
+                                <div class="amw-bottom-row">
+                                    <div class="amw-line-narrow" id="amw-motto-narrow" contenteditable="true" spellcheck="false">✨ 행복 확산 </div>
+                                    <div class="amw-emoji-circle" id="amw-motto-emoji" contenteditable="true" spellcheck="false">🍏</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="right-col">
+                        <div class="frosted-polaroid-widget">
+                            <div class="fp-glass-bg"></div>
+                            <label for="upload-polaroid-1" class="fp-polaroid-wrapper">
+                                <div class="fp-polaroid" id="image-target-polaroid-1">
+                                    <i class='bx bx-plus empty-icon' style="font-size: 24px; color: #aaa;"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-row">
+                    <div class="left-col">
+                        <div class="text-image-widget">
+                            <div class="tiw-text" id="tiw-text-id" contenteditable="true" spellcheck="false">♡ ₊ ˚ milky kitty ୨</div>
+                            <label for="upload-original-square" style="width: 100%; flex-grow: 1; display: flex;">
+                                <div class="tiw-image" id="image-target-original-square">
+                                    <i class='bx bx-plus empty-icon' style="font-size: 24px; color: #aaa;"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="right-col">
+                        <div class="app-grid-2x2">
+                            <div class="icon-customizable" id="app-item-1"><i class='bx bx-chat'></i><span>聊天</span></div>
+                            <div class="icon-customizable" id="app-item-2"><i class='bx bx-book'></i><span>世界书</span></div>
+                            <div class="icon-customizable" id="app-item-3"><i class='bx bx-heart'></i><span>情侣空间</span></div>
+                            <div class="icon-customizable" id="app-item-4"><i class='bx bxs-pen'></i><span>作家协会</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 2 -->
+            <div class="home-page" id="home-page-2">
+                <div class="polaroid-row-widget">
+                    <label for="upload-polaroid-row-1" class="mini-polaroid" id="image-target-polaroid-row-1">
+                        <div class="tape"></div>
+                    </label>
+                    <label for="upload-polaroid-row-2" class="mini-polaroid" id="image-target-polaroid-row-2">
+                        <div class="tape"></div>
+                    </label>
+                    <label for="upload-polaroid-row-3" class="mini-polaroid" id="image-target-polaroid-row-3">
+                        <div class="tape"></div>
+                    </label>
+                </div>
+
+                <div class="page-2-bottom">
+                    <div class="left-col">
+                        <div class="app-grid-2x2">
+                            <div class="icon-customizable" id="app-item-5"><i class='bx bx-star'></i><span>星星系统</span></div>
+                            <div class="icon-customizable" id="app-item-6"><i class='bx bx-ghost'></i><span>占位1</span></div>
+                            <div class="icon-customizable" id="app-item-7"><i class='bx bx-planet'></i><span>占位2</span></div>
+                            <div class="icon-customizable" id="app-item-8"><i class='bx bx-music'></i><span>占位3</span></div>
+                        </div>
+                    </div>
+                    <div class="right-col">
+                        <label for="upload-large-rounded">
+                            <div class="large-rounded-widget" id="image-target-large-rounded">
+                                <i class='bx bx-plus empty-icon'></i>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="floating-dock glass-widget">
+            <div class="icon-customizable" id="nav-item-1"><i class='bx bx-palette'></i><span>美化</span></div>
+            <div class="icon-customizable" id="nav-item-2"><i class='bx bx-cog'></i><span>设置</span></div>
+            <div class="icon-customizable" id="nav-item-3"><i class='bx bx-search-alt-2'></i><span>查手机</span></div>
+        </div>
+    </div>
+
+    <div id="chat-app-page">
+        <header class="chat-header">
+            <button class="back-btn" id="close-chat-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2 id="chat-header-title">聊天</h2>
+            <div class="chat-header-right">
+                <button class="header-action-btn" id="add-friend-btn"><i class='bx bx-user-plus'></i></button>
+                <button class="header-action-btn" id="add-contact-btn"><i class='bx bx-plus'></i></button>
+            </div>
+        </header>
+        
+        <div class="chat-content-area">
+            <div id="chat-view-messages" class="chat-view-panel active">
+                <div class="chat-list" id="chat-list-container"></div>
+                <div class="empty-state" id="messages-empty" style="display: flex; flex-direction: column; align-items: center;">
+                    <i class='bx bx-message-square-dots' style="font-size: 48px; margin-bottom: 10px; color: #ccc;"></i>
+                    <p>暂无聊天记录</p>
+                </div>
+            </div>
+            <div id="chat-view-contacts" class="chat-view-panel">
+                <div class="contact-list" id="contact-list-container"></div>
+                <div class="empty-state" id="contacts-empty" style="display: flex; flex-direction: column; align-items: center;">
+                    <i class='bx bx-user' style="font-size: 48px; margin-bottom: 10px; color: #ccc;"></i>
+                    <p>暂无联系人</p>
+                </div>
+            </div>
+            <div id="chat-view-moments" class="chat-view-panel">
+                <div class="mf-content" id="mf-scroll-content" style="background: #fff; padding-top: 0; display: flex; flex-direction: column; height: 100%; overflow-y: auto;">
+                    <div class="ig-profile-header">
+                        <div class="ig-profile-top">
+                            <div class="ig-avatar-wrap">
+                                <div class="ig-avatar" id="ig-current-avatar" style="background-image: url('');">
+                                    <div class="ig-avatar-plus" id="ig-add-story-btn"><i class='bx bx-plus'></i></div>
+                                </div>
+                            </div>
+                            <div class="ig-stats">
+                                <div class="ig-stat-item"><span class="ig-stat-val" id="ig-stat-posts">0</span><span class="ig-stat-label">Posts</span></div>
+                                <div class="ig-stat-item"><span class="ig-stat-val" id="ig-stat-followers">1314</span><span class="ig-stat-label">Followers</span></div>
+                                <div class="ig-stat-item"><span class="ig-stat-val" id="ig-stat-following">520</span><span class="ig-stat-label">Following</span></div>
+                            </div>
+                        </div>
+                        <div class="ig-profile-bio">
+                            <div class="ig-bio-name" id="ig-current-name">@username</div>
+                            <div class="ig-bio-desc" id="ig-current-desc">Default Signature</div>
+                        </div>
+                        <div class="ig-profile-actions">
+                            <button class="ig-edit-btn" id="ig-edit-profile-btn">Edit Profile</button>
+                        </div>
+                    </div>
+
+                    <div class="ig-stories-row" id="ig-stories-container">
+                    </div>
+
+                    <div class="ig-feed-tabs">
+                        <div class="ig-tab active"><i class='bx bx-grid-alt'></i></div>
+                        <div class="ig-tab"><i class='bx bx-play-circle'></i></div>
+                        <div class="ig-tab"><i class='bx bx-user-pin'></i></div>
+                    </div>
+
+                    <div class="mf-feed-container" id="mf-feed-container" style="background: #fff; flex-grow: 1;">
+                        <div class="empty-state" id="mf-empty-state" style="margin-top: 50px; color: #999; width: 100%;">
+                            <i class='bx bx-camera' style="font-size: 48px; margin-bottom: 10px;"></i>
+                            <p>No Posts Yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="chat-view-mine" class="chat-view-panel">
+                <div class="user-profile-page" id="user-profile-page">
+                    <div class="mine-header-area">
+                        <label for="upload-mine-avatar" class="mine-avatar" id="mine-avatar-preview">
+                            <i class='bx bx-camera'></i>
+                        </label>
+                        <div class="mine-status-btn" id="mine-status-btn">
+                            <span id="mine-current-status-text">在线</span>
+                            <i class='bx bx-chevron-right'></i>
+                        </div>
+                    </div>
+                    
+                    <div class="mine-menu-list">
+                        <div class="mine-menu-item" id="mine-menu-balance">
+                            <div class="mine-menu-icon"><i class='bx bx-wallet'></i></div>
+                            <div class="mine-menu-text">余额 <span class="mine-menu-value" id="mine-balance-preview">¥0.00</span></div>
+                            <i class='bx bx-chevron-right mine-menu-arrow'></i>
+                        </div>
+                        <div class="mine-menu-item">
+                            <div class="mine-menu-icon"><i class='bx bx-star'></i></div>
+                            <div class="mine-menu-text">星辰碎片 <span class="mine-menu-value" id="mine-star-balance">0</span></div>
+                            <i class='bx bx-chevron-right mine-menu-arrow'></i>
+                        </div>
+                        <div class="mine-menu-item">
+                            <div class="mine-menu-icon"><i class='bx bx-mask'></i></div>
+                            <div class="mine-menu-text">用户面具</div>
+                            <i class='bx bx-chevron-right mine-menu-arrow'></i>
+                        </div>
+                        <div class="mine-menu-item">
+                            <div class="mine-menu-icon"><i class='bx bx-collection'></i></div>
+                            <div class="mine-menu-text">用户收藏</div>
+                            <i class='bx bx-chevron-right mine-menu-arrow'></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-bottom-nav">
+            <div class="chat-nav-item active" data-target="messages">
+                <i class='bx bxs-message-rounded'></i>
+                <span>聊天</span>
+            </div>
+            <div class="chat-nav-item" data-target="contacts">
+                <i class='bx bxs-contact'></i>
+                <span>联系人</span>
+            </div>
+            <div class="chat-nav-item" data-target="moments">
+                <i class='bx bx-world'></i>
+                <span>朋友圈</span>
+            </div>
+            <div class="chat-nav-item" data-target="mine">
+                <i class='bx bx-user'></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加人设全屏页面 -->
+    <div id="add-contact-page">
+        <header class="add-contact-header">
+            <button class="back-btn" id="close-add-contact-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>添加人设</h2>
+            <button class="save-btn" id="save-contact-btn">保存</button>
+        </header>
+        <div class="add-contact-form">
+            <div class="student-id-card">
+                <label for="upload-contact-avatar" class="id-photo-area" id="contact-avatar-preview">
+                    <i class='bx bx-camera'></i>
+                </label>
+                <div class="id-info-area">
+                    <div class="id-input-row">
+                        <label>姓名</label>
+                        <input type="text" id="contact-input-name" placeholder="填写姓名">
+                    </div>
+                    <div class="id-input-row">
+                        <label>性别</label>
+                        <input type="text" id="contact-input-gender" placeholder="填写性别">
+                    </div>
+                    <div class="id-input-row">
+                        <label>年龄</label>
+                        <input type="text" id="contact-input-age" placeholder="填写年龄">
+                    </div>
+                </div>
+            </div>
+            <div class="form-section">
+                <label>开场白</label>
+                <textarea id="contact-input-opening" rows="3" placeholder="填写开场白..."></textarea>
+            </div>
+            <div class="form-section">
+                <label>人设介绍</label>
+                <textarea id="contact-input-desc" rows="6" placeholder="填写详细人设介绍..."></textarea>
+            </div>
+            <button id="delete-contact-btn" style="width: 100%; padding: 14px; background: #ff3b30; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 10px; display: none;">删除角色</button>
+        </div>
+    </div>
+
+    <!-- 设置页面 -->
+    <div id="settings-page">
+        <header class="settings-header">
+            <button class="back-btn" id="close-settings-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>设置</h2>
+            <div style="width: 24px;"></div>
+        </header>
+        <div class="settings-list">
+            <div class="settings-item" id="nav-api-settings">
+                <span>API设置</span>
+                <i class='bx bx-chevron-right'></i>
+            </div>
+            <div class="settings-item">
+                <span>minmax语音设置</span>
+                <i class='bx bx-chevron-right'></i>
+            </div>
+            <div class="settings-item" id="nav-nai-settings">
+                <span>nai生图设置</span>
+                <i class='bx bx-chevron-right'></i>
+            </div>
+            <div class="settings-item" id="nav-keep-alive-settings">
+                <span>后台保活设置</span>
+                <i class='bx bx-chevron-right'></i>
+            </div>
+            <div class="settings-item" id="nav-backup-data">
+                <span>备份数据</span>
+                <i class='bx bx-cloud-upload'></i>
+            </div>
+            <div class="settings-item" id="nav-import-data">
+                <span>导入数据</span>
+                <i class='bx bx-cloud-download'></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 后台保活设置页面 -->
+    <div id="keep-alive-settings-page">
+        <header class="settings-header">
+            <button class="back-btn" id="close-ka-settings-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>后台保活设置</h2>
+            <div style="width: 24px;"></div>
+        </header>
+        <div class="api-form-container">
+            <div class="api-form-card" style="text-align: center; padding: 30px 20px;">
+                <i class='bx bx-bell-ring' style="font-size: 48px; color: #007AFF; margin-bottom: 15px;"></i>
+                <h3 style="font-size: 18px; margin-bottom: 10px;">网页通知权限</h3>
+                <p style="font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 25px;">
+                    开启后，即使网页在后台运行，角色主动发来的消息也会通过系统弹窗提醒您。
+                    <br><br>
+                    <small>建议：请尽量保持浏览器不被完全关闭，移动端请勿划掉后台卡片。</small>
+                </p>
+                <button class="tp-submit-btn" id="request-notify-btn">1. 点击授权通知权限</button>
+                <button class="tp-submit-btn" id="start-keep-alive-btn" style="margin-top: 15px; background: #fff; color: #ff9800; border: 1px solid #ff9800; box-shadow: none;">2. 开启音频防杀保活</button>
+                <button class="tp-submit-btn" id="test-notify-btn" style="margin-top: 15px; background: #fff; color: #007AFF; border: 1px solid #007AFF; box-shadow: none;">3. 检测后台弹窗</button>
+                <p style="font-size: 12px; color: #999; margin-top: 10px; line-height: 1.4;">点击检测后，请在5秒内将应用退到后台。<br>成功开启的话会收到成功的消息弹窗。</p>
+                <div id="notify-status" style="margin-top: 15px; font-size: 13px; color: #888;">当前状态: 未知</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAI设置页面 -->
+    <div id="nai-settings-page">
+        <header class="settings-header">
+            <button class="back-btn" id="close-nai-settings-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>NAI生图设置</h2>
+            <button class="save-btn" id="save-nai-btn" style="background:transparent; color:#333; font-weight:600; font-size:16px;">保存</button>
+        </header>
+        <div class="api-form-container">
+            <div class="api-form-card">
+                <div class="api-input-group">
+                    <label>生图模式</label>
+                    <select id="nai-mode-select">
+                        <option value="text">文字图</option>
+                        <option value="nai">NovelAI (nai-diffusion-3)</option>
+                    </select>
+                </div>
+                <div class="api-input-group">
+                    <label>NAI API秘钥</label>
+                    <input type="password" id="nai-api-key" placeholder="ptc_...">
+                </div>
+                
+                <div class="api-input-group">
+                    <label>预设管理</label>
+                    <div style="display:flex; gap:10px;">
+                        <select id="nai-preset-select" style="flex-grow:1;">
+                            <option value="">默认预设</option>
+                        </select>
+                        <button id="nai-save-preset-btn" class="save-btn" style="padding: 6px 12px; font-size:12px;">保存预设</button>
+                        <button id="nai-del-preset-btn" class="save-btn" style="background:#ff3b30; padding: 6px 12px; font-size:12px;">删除</button>
+                    </div>
+                </div>
+                <div class="api-input-group">
+                    <label>预设名称</label>
+                    <input type="text" id="nai-preset-name" placeholder="为当前预设命名">
+                </div>
+                <div class="api-input-group">
+                    <label>基础提示词 (Prompt)</label>
+                    <textarea id="nai-prompt" rows="4" placeholder="例如: 1girl, best quality, amazing details..." style="width: 100%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; font-family: inherit; font-size: 14px; outline: none;"></textarea>
+                </div>
+                <div class="api-input-group">
+                    <label>负面提示词 (Negative Prompt)</label>
+                    <textarea id="nai-negative-prompt" rows="3" placeholder="例如: lowres, bad anatomy, bad hands..." style="width: 100%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; font-family: inherit; font-size: 14px; outline: none;"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API设置页面 -->
+    <div id="api-settings-page">
+        <header class="settings-header">
+            <button class="back-btn" id="close-api-settings-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>API设置</h2>
+            <button class="save-btn" id="save-api-btn" style="background:transparent; color:#333; font-weight:600; font-size:16px;">保存</button>
+        </header>
+        <div class="api-form-container">
+            <div class="api-form-card">
+                <div class="api-input-group">
+                    <label>预设管理</label>
+                    <div style="display:flex; gap:10px;">
+                        <select id="api-preset-select" style="flex-grow:1;">
+                            <option value="">默认预设</option>
+                        </select>
+                        <button id="api-save-preset-btn" class="save-btn" style="padding: 6px 12px; font-size:12px;">保存预设</button>
+                        <button id="api-del-preset-btn" class="save-btn" style="background:#ff3b30; padding: 6px 12px; font-size:12px;">删除</button>
+                    </div>
+                </div>
+                <div class="api-input-group">
+                    <label>URL地址</label>
+                    <input type="text" id="api-url" placeholder="例如: https://api.openai.com/v1">
+                </div>
+                <div class="api-input-group">
+                    <label>API秘钥</label>
+                    <input type="password" id="api-key" placeholder="sk-...">
+                </div>
+                <div class="api-input-group">
+                    <label>手动输入模型名称</label>
+                    <input type="text" id="api-model-name" placeholder="例如: gpt-4o (可选)">
+                </div>
+                <button class="fetch-btn" id="fetch-models-btn"><span>拉取模型列表</span></button>
+                <div class="api-input-group" id="model-select-group">
+                    <label>选择模型</label>
+                    <div style="position: relative;">
+                        <select id="api-model-select">
+                            <option value="">请选择拉取到的模型...</option>
+                        </select>
+                        <i class='bx bx-chevron-down' style="position: absolute; right: 0; top: 10px; color: #888; pointer-events: none;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 世界书页面 -->
+    <div id="worldbook-page">
+        <header class="wb-header">
+            <button class="back-btn" id="close-wb-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2 id="wb-header-title">全局</h2>
+            <div class="wb-header-actions">
+                <button class="wb-action-btn" id="wb-create-folder-btn"><i class='bx bx-folder-plus'></i></button>
+                <button class="wb-action-btn" id="wb-add-content-btn"><i class='bx bx-plus'></i></button>
+            </div>
+        </header>
+        
+        <!-- 文件夹面包屑导航 -->
+        <div class="wb-breadcrumb" id="wb-breadcrumb" style="display: none;">
+            <button id="wb-back-folder-btn"><i class='bx bx-chevron-left'></i>返回</button>
+            <span id="wb-current-folder-name">当前文件夹</span>
+        </div>
+
+        <div class="wb-content-area" id="wb-content-container">
+            <div class="wb-grid" id="wb-global-grid">
+                <!-- 全局内容 -->
+                <div class="empty-state" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; color: #aaa; margin-top: 50px;">
+                    <i class='bx bx-book-open' style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>暂无全局世界书内容</p>
+                </div>
+            </div>
+            <div class="wb-grid" id="wb-local-grid" style="display: none;">
+                <!-- 局部内容 -->
+                <div class="empty-state" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; color: #aaa; margin-top: 50px;">
+                    <i class='bx bx-book-bookmark' style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>暂无局部世界书内容</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="wb-bottom-nav">
+            <div class="wb-nav-btn active" data-target="global">全局</div>
+            <div class="wb-nav-btn" data-target="local">局部</div>
+        </div>
+    </div>
+
+    <!-- 添加世界书内容弹窗 -->
+    <div id="wb-add-modal">
+        <header class="wb-header">
+            <button class="back-btn" id="close-wb-add-btn"><i class='bx bx-x'></i></button>
+            <h2>添加内容</h2>
+            <button class="save-btn" id="save-wb-btn" style="background:transparent; color:#333; font-weight:600; font-size:16px;">保存</button>
+        </header>
+        <div class="wb-add-form">
+            <div class="wb-form-group">
+                <label>所属文件夹</label>
+                <select id="wb-folder-select" class="wb-input-select">
+                    <option value="">根目录 (无文件夹)</option>
+                </select>
+            </div>
+            <input type="text" class="wb-input-title" id="wb-input-title" placeholder="标题">
+            <textarea class="wb-input-content" id="wb-input-content" placeholder="输入世界书内容..."></textarea>
+        </div>
+    </div>
+
+    <!-- 全局后台通知 Toast -->
+    <div id="global-toast" class="global-toast">
+        <div class="global-toast-avatar" id="global-toast-avatar"></div>
+        <div class="global-toast-content">
+            <div class="global-toast-name" id="global-toast-name">Name</div>
+            <div class="global-toast-text" id="global-toast-text">Message</div>
+        </div>
+    </div>
+
+    <!-- 聊天对话全屏页面 -->
+    <div id="chat-conversation-page">
+        <div class="conv-simple-header" id="conv-simple-header">
+            <button class="conv-icon-btn" id="conv-back-btn" style="position: relative; z-index: 2; background: transparent; border: none; font-size: 28px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5);"><i class='bx bx-chevron-left'></i></button>
+            <div class="conv-simple-info" id="conv-simple-status-area">
+                <div class="conv-simple-name">
+                    <span id="conv-header-name" contenteditable="true" spellcheck="false" style="outline:none;">名字</span>
+                    <i class='bx bx-search' id="weibo-search-btn" style="font-size: 18px; margin-left: 4px; cursor: pointer; color: #fff;"></i> <!-- keep search id for inner voice -->
+                </div>
+                <div class="conv-simple-status" id="conv-header-status-wrap">
+                    <div class="conv-status-dot" id="conv-status-dot" style="background-color: #07c160;"></div>
+                    <span id="conv-header-status">在线 - WiFi</span>
+                    <i class='bx bx-chevron-right' style="font-size: 12px; margin-left: 2px;"></i>
+                </div>
+            </div>
+            <div class="conv-simple-actions">
+                <button class="conv-icon-btn" id="conv-profile-btn" style="background: transparent; border: none; font-size: 28px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5);"><i class='bx bx-menu'></i></button>
+            </div>
+        </div>
+        
+        <div class="conv-messages-area" id="conv-messages-container" style="padding-top: max(80px, calc(env(safe-area-inset-top, 40px) + 30px)) !important;">
+            <!-- Messages will be injected here -->
+        </div>
+        
+        <div id="msg-context-menu" class="msg-context-menu">
+            <div class="msg-context-menu-item" id="menu-item-quote">引用</div>
+            <div class="msg-context-menu-item" id="menu-item-edit">编辑</div>
+            <div class="msg-context-menu-item" id="menu-item-recall">撤回</div>
+            <div class="msg-context-menu-item" id="menu-item-multiselect">多选</div>
+            <div class="msg-context-menu-item" id="menu-item-reroll">重试本轮</div>
+            <div class="msg-context-menu-item danger" id="menu-item-delete">删除</div>
+        </div>
+        
+        <div class="multi-select-bar" id="multi-select-bar">
+            <button style="background:none; border:none; color:#555; font-size:16px; font-weight:600; cursor:pointer;" id="multi-select-cancel">取消</button>
+            <button style="background:none; border:none; color:#ff3b30; font-size:24px; cursor:pointer;" id="multi-select-delete-btn"><i class='bx bx-trash'></i></button>
+        </div>
+
+        <div class="conv-bottom-container" id="conv-bottom-container">
+            <div class="quote-preview-area" id="quote-preview-area">
+                <span id="quote-preview-text"></span>
+                <i class='bx bx-x quote-preview-close' id="quote-preview-close"></i>
+            </div>
+            <div class="conv-input-area">
+                <!-- 顺序调整: AI -> 输入框 -> 表情 -> 星星 -> 加号 -->
+                <button class="conv-icon-btn" id="chat-ai-btn"><i class='bx bx-bot'></i></button>
+                <div class="conv-input-box">
+                    <input type="text" id="conv-msg-input" placeholder="Aa">
+                </div>
+                <button class="conv-icon-btn" id="chat-smile-btn"><i class='bx bx-smile'></i></button>
+                <button class="conv-icon-btn" id="chat-star-btn"><i class='bx bx-star'></i></button>
+                <button class="conv-icon-btn" id="chat-plus-btn"><i class='bx bx-plus'></i></button>
+            </div>
+            
+            <!-- 星星/礼物抽屉 -->
+            <div class="conv-drawer sticker-drawer" id="chat-drawer-star">
+                <div class="sticker-drawer-tabs" style="justify-content: space-between; align-items: center; padding-right: 15px;">
+                    <div style="padding: 10px 15px; font-size: 14px; font-weight: 600; color: #333;">礼物背包</div>
+                    <div id="star-balance-display" style="font-size: 14px; font-weight: 600; color: #f5a623; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bxs-star'></i> <span id="star-balance-amount">10</span>
+                    </div>
+                </div>
+                <div class="sticker-grid" id="gift-drawer-grid">
+                    <!-- Gifts injected here -->
+                </div>
+                <div style="padding: 10px; border-top: 1px solid #eaeaea; text-align: center;">
+                    <button id="add-custom-gift-btn" style="background: none; border: 1px dashed #ccc; padding: 8px 20px; border-radius: 8px; color: #666; cursor: pointer; width: 100%;">+ 添加自定义礼物</button>
+                </div>
+            </div>
+
+            <!-- 加号功能抽屉 -->
+            <div class="conv-drawer" id="chat-drawer-plus">
+                <div class="feature-grid">
+                    <label for="upload-chat-image" class="feature-item" id="drawer-btn-album">
+                        <div class="feature-icon"><i class='bx bx-image'></i></div>
+                        <span class="feature-text">相册</span>
+                    </label>
+                    <div class="feature-item" id="drawer-btn-stickers">
+                        <div class="feature-icon"><i class='bx bx-happy-heart-eyes'></i></div>
+                        <span class="feature-text">表情包</span>
+                    </div>
+                    <div class="feature-item" id="drawer-btn-transfer">
+                        <div class="feature-icon"><i class='bx bx-transfer'></i></div>
+                        <span class="feature-text">转账</span>
+                    </div>
+                    <div class="feature-item" id="drawer-btn-textimg">
+                        <div class="feature-icon"><i class='bx bx-text'></i></div>
+                        <span class="feature-text">文字图</span>
+                    </div>
+                    <div class="feature-item" id="drawer-btn-reroll">
+                        <div class="feature-icon"><i class='bx bx-refresh'></i></div>
+                        <span class="feature-text">重试回复</span>
+                    </div>
+                    <div class="feature-item" id="drawer-btn-memory">
+                        <div class="feature-icon"><i class='bx bx-brain'></i></div>
+                        <span class="feature-text">记忆库</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 表情包抽屉 -->
+            <div class="conv-drawer sticker-drawer" id="chat-drawer-smile">
+                <div class="sticker-drawer-tabs" id="sticker-drawer-tabs">
+                    <!-- Tabs injected here -->
+                </div>
+                <div class="sticker-grid" id="sticker-drawer-grid">
+                    <!-- Stickers injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色详情页全屏页面 -->
+    <div id="role-profile-page">
+        <header class="rp-header">
+            <button class="back-btn" id="close-rp-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2 style="font-size: 16px; font-weight: 600; color: #333;">角色详情</h2>
+            <button class="save-btn" id="save-rp-btn" style="background:transparent; color:#333; font-weight:600; font-size:16px;">保存</button>
+        </header>
+        <div class="rp-content">
+            <div class="rp-card">
+                <div class="rp-top-info">
+                    <div class="rp-avatar" id="rp-avatar-preview"></div>
+                    <div>
+                        <div class="rp-name" id="rp-name-display" contenteditable="true" style="outline:none;">名字</div>
+                        <div class="rp-desc" id="rp-desc-display">性别 | 年龄</div>
+                        <div style="font-size: 12px; color: #aaa; margin-top: 4px;">(点击名字可修改备注)</div>
+                    </div>
+                </div>
+                <div class="rp-section-title" style="margin-top: 15px; margin-bottom: 5px;">人设</div>
+                <textarea class="rp-textarea" id="rp-contact-desc" rows="4" placeholder="修改角色人设..."></textarea>
+            </div>
+            
+            <div class="rp-card">
+                <span class="rp-section-title">绑定设置</span>
+                <div class="rp-select-group">
+                    <label style="font-size:12px; color:#888;">绑定世界书</label>
+                    <select id="rp-worldbook-select">
+                        <option value="">不绑定</option>
+                    </select>
+                </div>
+                <div class="rp-select-group">
+                    <label style="font-size:12px; color:#888;">绑定表情包分组</label>
+                    <select id="rp-sticker-group-select">
+                        <option value="">不绑定</option>
+                    </select>
+                </div>
+                <div class="rp-select-group" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 5px;">
+                    <label style="font-size:12px; color:#888;">AI回复条数 (小-大)</label>
+                    <div style="display: flex; gap: 5px; align-items: center; width: 120px;">
+                        <input type="number" id="rp-reply-min" style="width: 50px; padding: 5px; border: 1px solid #eaeaea; border-radius: 4px; text-align: center;" value="1" min="1">
+                        <span style="color:#888;">-</span>
+                        <input type="number" id="rp-reply-max" style="width: 50px; padding: 5px; border: 1px solid #eaeaea; border-radius: 4px; text-align: center;" value="4" min="1">
+                    </div>
+                </div>
+                <div class="rp-toggle-row" style="margin-top: 10px;">
+                    <span class="rp-toggle-label" style="font-size: 13px;">时间感知 (感知当前时间与跨天)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="rp-time-aware">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="rp-toggle-row" style="margin-top: 10px;">
+                    <span class="rp-toggle-label" style="font-size: 13px;">主动发消息 (开启后自动推进聊天)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="rp-auto-reply">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="rp-select-group" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 5px;">
+                    <label style="font-size:12px; color:#888;">主动发消息间隔 (分钟)</label>
+                    <input type="number" id="rp-auto-reply-interval" style="width: 60px; padding: 5px; border: 1px solid #eaeaea; border-radius: 4px; text-align: center;" value="10" min="1">
+                </div>
+                <!-- 移除了自动总结开关和记忆内容框，将这些功能迁移至记忆库 -->
+                <input type="checkbox" id="rp-auto-memory" style="display:none">
+                <textarea id="rp-memory-content" style="display:none"></textarea>
+            </div>
+            
+            
+            <div class="rp-card">
+                <span class="rp-section-title">User人设</span>
+                <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                    <label for="upload-user-avatar" class="rp-avatar" id="rp-user-avatar-preview" style="cursor: pointer; position: relative; border: 1px dashed #ccc;">
+                        <i class='bx bx-camera' style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999;"></i>
+                    </label>
+                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                        <span style="font-size: 14px; color: #333; font-weight: 500;">User头像</span>
+                        <span style="font-size: 12px; color: #888;">点击上传自定义头像</span>
+                    </div>
+                </div>
+                <textarea class="rp-textarea" id="rp-user-persona" rows="4" placeholder="输入用户人设给AI读取..."></textarea>
+            </div>
+
+            <div class="rp-card">
+                <span class="rp-section-title">聊天背景设置</span>
+                <div style="display: flex; gap: 15px; margin-bottom: 10px; align-items: center;">
+                    <label for="upload-chat-bg" class="upload-btn" style="width: 100%; text-align: center;">上传自定义背景</label>
+                    <button class="save-btn" id="clear-chat-bg-btn" style="background: #ff3b30; flex-shrink: 0; padding: 8px 12px; border-radius: 8px;">清除</button>
+                </div>
+            </div>
+
+            <div class="rp-card">
+                <span class="rp-section-title">自定义CSS美化</span>
+                <span style="font-size: 12px; color: #888; margin-bottom: 5px;">输入正确的CSS可以修改聊天气泡、颜色等样式</span>
+                <textarea class="rp-textarea" id="rp-custom-css" rows="6" placeholder=".msg-bubble { border-radius: 20px !important; }"></textarea>
+            </div>
+            <button id="clear-chat-btn" style="width: 100%; padding: 14px; background: #fff; color: #ff3b30; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 10px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eaeaea;">清空聊天记录</button>
+        </div>
+    </div>
+
+    <!-- 表情包管理全屏页面 -->
+    <div id="sticker-mgr-page">
+        <header class="wb-header">
+            <button class="back-btn" id="close-sticker-mgr-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2 style="font-size: 16px;">表情包管理</h2>
+            <div class="wb-header-actions">
+                <button class="wb-action-btn" id="create-sticker-group-btn" title="创建分组"><i class='bx bx-folder-plus'></i></button>
+                <button class="wb-action-btn" id="import-sticker-txt-btn" title="导入TXT"><i class='bx bx-import'></i></button>
+            </div>
+        </header>
+        <div class="sticker-drawer-tabs" id="sticker-mgr-tabs" style="background: #fff; padding: 5px 10px;">
+            <!-- Tabs injected here -->
+        </div>
+        <div class="wb-content-area" style="background: #f7f7f7; display: flex; flex-direction: column; position: relative;">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="save-btn" id="add-stickers-btn" style="flex: 1; display: none; background: #fff; color: #333; border: 1px dashed #ccc;"><i class='bx bx-plus'></i> 批量粘贴</button>
+                <button class="save-btn" id="batch-mgr-btn" style="display: none; background: #f0f0f0; color: #333; border: 1px solid #ccc;">批量管理</button>
+            </div>
+            
+            <div class="sticker-grid" id="sticker-mgr-grid" style="padding: 0; padding-bottom: 60px;">
+                <!-- Stickers injected here -->
+                <div class="empty-state" id="sticker-mgr-empty" style="grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; color: #aaa; margin-top: 50px;">
+                    <i class='bx bx-image' style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>暂无表情包</p>
+                </div>
+            </div>
+
+            <!-- 批量管理底部栏 -->
+            <div class="sticker-mgr-bottom-bar" id="sticker-mgr-bottom-bar" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 10;">
+                <button id="mgr-cancel-btn" style="background: none; border: none; font-size: 14px; color: #666;">取消</button>
+                <div style="display: flex; gap: 10px;">
+                    <select id="mgr-move-select" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px;">
+                        <option value="">移动到...</option>
+                    </select>
+                    <button id="mgr-move-btn" class="save-btn" style="background: #007AFF; padding: 4px 12px; font-size: 13px;">移动</button>
+                    <button id="mgr-del-btn" class="save-btn" style="background: #ff3b30; padding: 4px 12px; font-size: 13px;">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色心声弹窗 (重绘高级韩系居中卡片) -->
+    <div id="inner-voice-modal" class="ui-modal-overlay" style="justify-content: center; align-items: center;">
+        <div style="position: absolute; top:0; left:0; width:100%; height:100%;" class="ui-modal-bg" id="close-inner-voice-bg"></div>
+        <div class="inner-voice-card" style="position: relative; width: 88%; max-width: 340px; background: rgba(245, 245, 245, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.5); z-index: 10;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-family: 'Times New Roman', Times, serif; font-size: 22px; font-weight: 700; color: #111; letter-spacing: 1px; font-style: italic;">Inner Voice</span>
+                    <span style="font-size: 11px; color: #888; letter-spacing: 2px; text-transform: uppercase;">Character State</span>
+                </div>
+                <button id="close-inner-voice-btn" style="background: rgba(0,0,0,0.05); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; color: #555; transition: all 0.2s;"><i class='bx bx-x' style="font-size: 20px;"></i></button>
+            </div>
+
+            <div class="inner-voice-sections" id="inner-voice-text" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- 内容由JS动态生成，包含 生理反应、色色想法、行动 -->
+                <div style="text-align: center; color: #888; font-size: 13px; padding: 20px 0;">正在探测角色心声...</div>
+            </div>
+
+            <button class="tp-submit-btn" id="refresh-inner-voice-btn" style="margin-top: 10px; background: #111; color: #fff; padding: 14px; border-radius: 16px; font-size: 14px; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">Re-detect (探测心声)</button>
+        </div>
+    </div>
+
+    <!-- 添加自定义礼物悬浮窗 -->
+    <div id="add-gift-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-add-gift-btn"><i class='bx bx-x'></i></button>
+                <span>添加自定义礼物</span>
+                <div style="width:28px;"></div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-start;">
+                <label for="upload-custom-gift-img" class="id-photo-area" id="custom-gift-preview" style="width: 80px; height: 80px; border-radius: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; background: #f0f0f0; border: 1px dashed #ccc; flex-shrink: 0; background-size: contain; background-position: center; background-repeat: no-repeat;">
+                    <i class='bx bx-camera'></i>
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
+                    <div class="api-input-group">
+                        <label>礼物名称</label>
+                        <input type="text" id="custom-gift-name" placeholder="例如: 豪华跑车">
+                    </div>
+                    <div class="api-input-group">
+                        <label>需要星星数量</label>
+                        <input type="number" id="custom-gift-price" placeholder="例如: 50" min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <button class="tp-submit-btn" id="save-custom-gift-btn">保存并添加</button>
+        </div>
+    </div>
+
+    <!-- 选择联系人聊天弹窗 -->
+    <div id="select-contact-modal">
+        <header class="add-contact-header">
+            <button class="back-btn" id="close-select-contact-btn"><i class='bx bx-x'></i></button>
+            <h2>选择联系人</h2>
+            <div style="width: 48px;"></div>
+        </header>
+        <div class="chat-content-area">
+            <div class="contact-list" id="select-contact-list-container"></div>
+            <div class="empty-state" id="select-contacts-empty" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888;">
+                <p>暂无联系人，请先添加人设</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 韩系转账悬浮窗 -->
+    <div id="transfer-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-transfer-btn"><i class='bx bx-x'></i></button>
+                <span>转账给角色</span>
+                <div style="width:28px;"></div>
+            </div>
+            <div class="tp-amount-wrapper">
+                <span class="tp-currency">¥</span>
+                <input type="number" id="tp-amount-input" placeholder="0.00" step="0.01">
+            </div>
+            <div class="tp-note-wrapper">
+                <input type="text" id="tp-note-input" placeholder="添加转账心意...">
+            </div>
+            <button class="tp-submit-btn" id="tp-submit-btn">确认转账</button>
+        </div>
+    </div>
+
+    <!-- 文字图悬浮窗 -->
+    <div id="textimg-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-textimg-btn"><i class='bx bx-x'></i></button>
+                <span>发送文字图</span>
+                <div style="width:28px;"></div>
+            </div>
+            <div class="tp-note-wrapper">
+                <textarea id="ti-content-input" rows="6" placeholder="在这里撰写长篇文字、信件..." style="resize: none; line-height: 1.6;"></textarea>
+            </div>
+            <button class="tp-submit-btn" id="ti-submit-btn">生成并发送</button>
+        </div>
+    </div>
+
+    <!-- 状态选择弹窗 (高级黑白灰韩系) -->
+    <div id="status-select-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg" id="close-status-modal"></div>
+        <div class="ui-popup-card" style="border-radius: 24px 24px 0 0; padding: 25px 20px 40px; background: #fff;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+                <div>
+                    <div style="font-family: 'Times New Roman', Times, serif; font-size: 24px; font-weight: 700; color: #111; letter-spacing: 0.5px; font-style: italic;">Current Status</div>
+                    <div style="font-size: 11px; color: #aaa; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px;">Select your mood</div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+                <div class="status-option premium-status" data-status="在线 ദ്ദി ˉ͈̀꒳ˉ͈́ )✧" data-color="#888888">
+                    <div class="premium-status-icon"><div style="width:12px;height:12px;border-radius:50%;background:#888;"></div></div>
+                    <span class="status-name">在线</span>
+                </div>
+                <div class="status-option premium-status" data-status="忙碌 ( ˘•ω•˘ )" data-color="#888888">
+                    <div class="premium-status-icon"><i class='bx bx-minus' style="color:#888;"></i></div>
+                    <span class="status-name">忙碌</span>
+                </div>
+                <div class="status-option premium-status" data-status="离开 (￣▽￣)~*" data-color="#888888">
+                    <div class="premium-status-icon"><i class='bx bx-time' style="color:#888;"></i></div>
+                    <span class="status-name">离开</span>
+                </div>
+                <div class="status-option premium-status" data-status="勿扰 (눈_눈)" data-color="#888888">
+                    <div class="premium-status-icon"><i class='bx bx-block' style="color:#888;"></i></div>
+                    <span class="status-name">勿扰</span>
+                </div>
+                <div class="status-option premium-status" data-status="听歌中 ♬(ノ゜∇゜)ノ" data-color="#888888">
+                    <div class="premium-status-icon"><i class='bx bx-headphone' style="color:#888;"></i></div>
+                    <span class="status-name">听歌</span>
+                </div>
+                <div class="status-option premium-status" data-status="运动中 ୧(๑•̀ㅁ•́๑)૭✧" data-color="#888888">
+                    <div class="premium-status-icon"><i class='bx bx-run' style="color:#888;"></i></div>
+                    <span class="status-name">运动</span>
+                </div>
+                <div class="status-option premium-status" data-status="我crush了 (๑•́ ₃ •̀๑)" data-color="#888888">
+                    <div class="premium-status-icon"><i class='bx bxs-heart' style="color:#888;"></i></div>
+                    <span class="status-name">Crush</span>
+                </div>
+                <div class="status-option premium-status" data-status="自定义" data-color="#888888" id="custom-status-trigger">
+                    <div class="premium-status-icon"><i class='bx bx-plus' style="color:#888; font-size: 20px;"></i></div>
+                    <span class="status-name" style="font-weight:600;">Custom</span>
+                </div>
+            </div>
+            
+            <div id="custom-status-input-area" style="display: none; margin-top: 20px; animation: slideUpFade 0.3s ease;">
+                <input type="text" id="custom-status-text" placeholder="输入自定义状态 (可包含颜文字)..." style="width: 100%; padding: 12px 15px; border: 1px solid #eaeaea; border-radius: 12px; font-size: 14px; outline: none; background: #f9f9f9; color: #333;">
+                <button id="save-custom-status-btn" style="width: 100%; padding: 12px; margin-top: 10px; background: #111; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;">Save Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 对方状态展示弹窗 -->
+    <div id="contact-status-modal" class="status-view-modal">
+        <div class="status-view-bg" id="close-contact-status"></div>
+        <div class="status-view-content">
+            <div class="status-view-avatar" id="contact-status-avatar"></div>
+            <div class="status-view-text">
+                <div class="status-view-dot" id="contact-status-dot"></div>
+                <span id="contact-status-text">在线 - WiFi</span>
+            </div>
+            <div class="status-view-actions">
+                <div class="status-action-btn"><i class='bx bx-heart'></i></div>
+                <div class="status-action-btn" style="background: #007AFF; color: #fff;"><i class='bx bx-like'></i></div>
+                <div class="status-action-btn"><i class='bx bx-sad'></i></div>
+                <div class="status-action-btn"><i class='bx bxs-face'></i></div>
+                <div class="status-action-btn"><i class='bx bx-ghost'></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 独立的别人朋友圈主页 (当点击别人头像时展示) -->
+    <div id="moments-feed-page" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; flex-direction:column;">
+        <!-- 头部导航 -->
+        <header class="mf-header" style="background: #fff; border-bottom: none; padding-bottom: 5px;">
+            <button class="back-btn" id="close-mf-btn" style="font-family: 'Times New Roman', Times, serif; font-size: 20px; font-weight: bold; font-style: italic; color: #111; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                <i class='bx bx-chevron-left' style="font-size: 24px;"></i>
+            </button>
+            <div class="mf-header-right" style="display: flex; gap: 15px;">
+            </div>
+        </header>
+        
+        <div class="mf-content" id="mf-scroll-content-others" style="background: #fff; padding-top: 0; display: flex; flex-direction: column; flex-grow:1; overflow-y:auto;">
+            <!-- Profile Info Area -->
+            <div class="ig-profile-header">
+                <div class="ig-profile-top">
+                    <div class="ig-avatar-wrap">
+                        <div class="ig-avatar" id="ig-current-avatar-others" style="background-image: url('');">
+                        </div>
+                    </div>
+                    <div class="ig-stats">
+                        <div class="ig-stat-item"><span class="ig-stat-val" id="ig-stat-posts-others">0</span><span class="ig-stat-label">Posts</span></div>
+                        <div class="ig-stat-item"><span class="ig-stat-val" id="ig-stat-followers-others">1314</span><span class="ig-stat-label">Followers</span></div>
+                        <div class="ig-stat-item"><span class="ig-stat-val" id="ig-stat-following-others">520</span><span class="ig-stat-label">Following</span></div>
+                    </div>
+                </div>
+                <div class="ig-profile-bio">
+                    <div class="ig-bio-name" id="ig-current-name-others">@username</div>
+                    <div class="ig-bio-desc" id="ig-current-desc-others">Default Signature</div>
+                </div>
+            </div>
+
+            <div class="ig-feed-tabs">
+                <div class="ig-tab active"><i class='bx bx-grid-alt'></i></div>
+                <div class="ig-tab"><i class='bx bx-play-circle'></i></div>
+                <div class="ig-tab"><i class='bx bx-user-pin'></i></div>
+            </div>
+
+            <!-- Feed Area -->
+            <div class="mf-feed-container" id="mf-feed-container-others" style="background: #fff; flex-grow: 1;">
+                <div class="empty-state" id="mf-empty-state-others" style="margin-top: 50px; color: #999; width: 100%;">
+                    <i class='bx bx-camera' style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>No Posts Yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 评论输入栏 -->
+        <div id="mf-comment-bar-others" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid #eaeaea; padding: 10px 15px; z-index: 200; align-items: center; gap: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom, 20px));">
+            <input type="text" id="mf-comment-input-others" style="flex: 1; border: none; border-radius: 20px; padding: 8px 15px; outline: none; font-size: 14px; background: #f0f0f0; border: 1px solid #eaeaea;" placeholder="Add a comment...">
+            <button id="mf-comment-send-others" class="save-btn" style="border-radius: 20px; padding: 6px 15px; background: #0095f6; color: white;">Post</button>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="ig-edit-profile-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg" id="close-ig-edit-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-ig-edit-btn"><i class='bx bx-x'></i></button>
+                <span>Edit Profile</span>
+                <div style="width:28px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <label for="upload-ig-avatar" class="ig-edit-avatar" id="ig-edit-avatar-preview" style="width: 80px; height: 80px; border-radius: 50%; background: #eee; background-size: cover; background-position: center; display: flex; justify-content: center; align-items: center; cursor: pointer; border: 1px solid #eaeaea; position: relative;">
+                    <i class='bx bx-camera' style="font-size: 24px; color: #888;"></i>
+                </label>
+                <div class="api-input-group" style="width: 100%;">
+                    <label>ID / Username</label>
+                    <input type="text" id="ig-edit-username" placeholder="@username">
+                </div>
+                <div class="api-input-group" style="width: 100%;">
+                    <label>Bio / Signature</label>
+                    <textarea id="ig-edit-bio" rows="3" placeholder="Default Signature" style="width: 100%; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px; outline: none; font-family: inherit; font-size: 14px; resize: none;"></textarea>
+                </div>
+                <button class="tp-submit-btn" id="save-ig-profile-btn" style="margin-top: 10px;">Save Profile</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 绑定AI设置弹窗 -->
+    <div id="moment-ai-settings-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-ai-settings-btn"><i class='bx bx-x'></i></button>
+                <span>AI 互动设置</span>
+                <div style="width:28px;"></div>
+            </div>
+            <div class="api-input-group" style="margin-bottom: 15px;">
+                <label>绑定互动角色</label>
+                <div style="position: relative;">
+                    <select id="moment-ai-companion-select">
+                        <option value="">不绑定</option>
+                    </select>
+                    <i class='bx bx-chevron-down' style="position: absolute; right: 0; top: 10px; color: #888; pointer-events: none;"></i>
+                </div>
+                <small style="color:#888; font-size:11px; margin-top:4px;">绑定的角色会在你发帖后自动评论，并可定时发帖。</small>
+            </div>
+            <div class="api-input-group" style="margin-bottom: 25px;">
+                <label>自动发帖频率 (小时)</label>
+                <input type="number" id="moment-ai-freq-input" placeholder="例如: 24 (代表每天1条)" min="1">
+            </div>
+            <button class="tp-submit-btn" id="save-ai-settings-btn" style="margin-top: 10px;">保存设置</button>
+            <button class="tp-submit-btn" id="force-ai-post-btn" style="margin-top: 15px; background: #fff; color: #007AFF; border: 1px solid #007AFF; box-shadow: none;">立刻让TA生成一条动态</button>
+        </div>
+    </div>
+    
+    <!-- 发布朋友圈弹窗 -->
+    <div id="post-moment-modal">
+        <header class="mf-header">
+            <button class="back-btn" id="cancel-post-btn"><i class='bx bx-x'></i></button>
+            <h2 style="font-size: 16px;">发动态</h2>
+            <button class="save-btn" id="submit-moment-btn" style="background:#007AFF; color:#fff; border-radius:16px; padding: 4px 12px; font-size:14px; font-weight:500;">发布</button>
+        </header>
+        <div class="post-form-area">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div class="post-author-avatar" id="post-author-avatar"></div>
+                <textarea id="post-content-input" placeholder="分享新鲜事..." rows="5" style="flex: 1; border: none; outline: none; font-size: 15px; resize: none; font-family: inherit; margin-top: 4px;"></textarea>
+            </div>
+            
+            <div class="post-image-grid" id="post-image-grid">
+                <!-- 图片预览区 -->
+                <label for="upload-moment-image" class="post-image-add-btn">
+                    <i class='bx bx-plus'></i>
+                </label>
+            </div>
+            
+            <div class="post-options">
+                <div class="post-option-item">
+                    <i class='bx bx-current-location' style="color:#007AFF;"></i>
+                    <span>所在位置</span>
+                </div>
+                <div class="post-option-item">
+                    <i class='bx bx-user' style="color:#007AFF;"></i>
+                    <span>提醒谁看</span>
+                </div>
+                <div class="post-option-item">
+                    <select id="post-author-select" style="border:none; outline:none; font-size:14px; color:#333; flex: 1; text-align: right; appearance: none; background: transparent;">
+                        <option value="user">我 (User)</option>
+                        <!-- 人设列表注入 -->
+                    </select>
+                    <i class='bx bx-chevron-right' style="color:#aaa;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 文字图阅读器悬浮窗 (全屏遮罩) -->
+    <div id="text-viewer-modal" class="ui-modal-overlay" style="z-index: 3000; justify-content: center; align-items: center; padding: 20px;">
+        <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85);" id="close-text-viewer-bg"></div>
+        <div style="position: relative; width: 100%; max-width: 400px; max-height: 85vh; background: #fff; border-radius: 16px; padding: 25px; overflow-y: auto; z-index: 3001; box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: slideUpFade 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;">
+            <div style="font-size: 15px; color: #333; line-height: 1.8; white-space: pre-wrap; word-break: break-all; font-family: 'PingFang SC', sans-serif;" id="text-viewer-content"></div>
+        </div>
+    </div>
+
+    <!-- 星星系统全屏主页 -->
+    <div id="star-system-page">
+        <header class="ss-header">
+            <button class="back-btn" id="close-ss-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>Star System</h2>
+            <div style="width: 24px;"></div>
+        </header>
+        <div class="ss-content">
+            <div class="ss-card ss-overview">
+                <div class="ss-overview-title">总星星数</div>
+                <div class="ss-overview-count" id="ss-total-stars">0</div>
+                <div class="ss-overview-level">系统等级: <span id="ss-level">1</span></div>
+            </div>
+            
+            <div class="ss-grid">
+                <div class="ss-card ss-action-btn" id="ss-btn-checkin">
+                    <i class='bx bx-calendar-check'></i>
+                    <span>每日签到</span>
+                    <small>+10 颗星</small>
+                </div>
+                <div class="ss-card ss-action-btn" id="ss-btn-journey">
+                    <i class='bx bx-planet'></i>
+                    <span>星际穿越</span>
+                    <small>探索与获取</small>
+                </div>
+                <div class="ss-card ss-action-btn" id="ss-btn-bottle">
+                    <i class='bx bx-water'></i>
+                    <span>星星瓶</span>
+                    <small>查看收集</small>
+                </div>
+                <div class="ss-card ss-action-btn" id="ss-btn-gallery">
+                    <i class='bx bx-medal'></i>
+                    <span>成就展馆</span>
+                    <small>你的成就</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 穿越 (Journey) 弹窗 -->
+    <div id="ss-journey-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-journey-btn"><i class='bx bx-x'></i></button>
+                <span>开启新旅程</span>
+                <div style="width:28px;"></div>
+            </div>
+            <div class="api-input-group" style="margin-bottom: 15px;">
+                <label>目的地 (场景/世界)</label>
+                <input type="text" id="journey-dest-input" placeholder="例如: 赛博朋克城市, 魔法森林...">
+            </div>
+            <div class="api-input-group" style="margin-bottom: 25px;">
+                <label>同伴 (可选)</label>
+                <div style="position: relative;">
+                    <select id="journey-companion-select">
+                        <option value="">无 (独自旅行)</option>
+                    </select>
+                    <i class='bx bx-chevron-down' style="position: absolute; right: 0; top: 10px; color: #888; pointer-events: none;"></i>
+                </div>
+            </div>
+            <button class="tp-submit-btn" id="start-journey-btn">开始穿越</button>
+            <div id="journey-progress-area" style="display: none; text-align: center; margin-top: 20px;">
+                <i class='bx bx-loader-alt spin' style="font-size: 32px; color: #111;"></i>
+                <div style="margin-top: 10px; font-size: 14px; color: #666;" id="journey-progress-text">正在穿越时空...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成就展馆 (Gallery) 页面 -->
+    <div id="ss-gallery-page">
+        <header class="ss-header">
+            <button class="back-btn" id="close-gallery-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2>成就展馆</h2>
+            <div style="width: 24px;"></div>
+        </header>
+        <div class="ss-content">
+            <h3 class="gallery-section-title">系统徽章</h3>
+            <div class="gallery-grid" id="gallery-system-badges">
+                <!-- System badges injected here -->
+            </div>
+            
+            <h3 class="gallery-section-title" style="margin-top: 25px;">同伴记忆</h3>
+            <div class="gallery-list" id="gallery-companion-memories">
+                <!-- Companion specific stats injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 星星瓶 (Star Bottle) 页面 -->
+    <div id="ss-bottle-page">
+        <header class="ss-header" style="background: transparent; border: none; position: absolute; width: 100%; z-index: 10;">
+            <button class="back-btn" id="close-bottle-btn" style="color: #333;"><i class='bx bx-chevron-left'></i></button>
+            <div style="width: 24px;"></div>
+        </header>
+        <div class="bottle-container-wrap">
+            <div class="bottle-title">星星收集</div>
+            <div class="glass-jar">
+                <div class="jar-lace"></div>
+                <div class="jar-opening"></div>
+                <div class="jar-body" id="jar-body-content">
+                    <!-- Stars injected here -->
+                </div>
+                <div class="jar-highlight"></div>
+            </div>
+            <div class="bottle-count-display">已收集: <span id="bottle-star-count">0</span></div>
+        </div>
+    </div>
+
+    <!-- 余额全屏页面 (My Wallet) -->
+    <div id="balance-page">
+        <header class="wb-header" style="border-bottom: none;">
+            <button class="back-btn" id="close-balance-btn"><i class='bx bx-chevron-left'></i></button>
+            <div style="width: 24px;"></div>
+        </header>
+        
+        <div class="balance-top-area">
+            <div class="balance-eng-title"><span style="font-size: 20px; font-weight: 600; color: #111; font-style: normal; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">我的钱包</span> <span style="font-size: 14px; margin-left: 4px;">My Wallet</span></div>
+            <div class="balance-total-amount">¥ <span id="balance-display-amount">0.00</span></div>
+            <div class="balance-sub-text">总可用余额 <span style="font-size: 9px; opacity: 0.6; margin-left: 4px; font-family: 'Times New Roman', serif; font-style: italic; text-transform: uppercase;">Total Available Balance</span></div>
+        </div>
+
+        <div class="mem-tabs-header" style="margin-top: 10px;">
+            <div class="mem-tab-item active" data-target="vault">虚拟金库</div>
+            <div class="mem-tab-item" data-target="dailybook">现实记账</div>
+        </div>
+
+        <div class="mem-content-area" style="background: #f7f7f7;">
+            <!-- 标签页1: 虚拟金库 -->
+            <div id="bal-view-vault" class="mem-view-panel active">
+                <!-- 跳转到现实记账的按钮 -->
+                <div style="padding: 10px 20px;">
+                    <button id="goto-daily-book-btn" style="width: 100%; padding: 12px; border: 1px solid #111; background: #111; color: #fff; font-size: 14px; letter-spacing: 1px; cursor: pointer; border-radius: 8px;">
+                        前往现实记账 &rarr; <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 12px; opacity: 0.7; margin-left: 4px; font-weight: normal; letter-spacing: 1px;">Daily Book</span>
+                    </button>
+                </div>
+                <div class="vault-card-container">
+                    <div class="black-card">
+                        <div class="card-logo">虚拟金库 <span style="font-size: 10px; font-family: 'Times New Roman', serif; font-style: italic; margin-left: 4px;">V-VAULT</span></div>
+                        <div class="card-chip"></div>
+                        <div class="card-number">**** **** **** 8888</div>
+                        <div class="card-footer">
+                            <span class="card-holder">USER ACCOUNT</span>
+                            <span class="card-val" id="vault-card-balance">¥ 0.00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="transaction-list-title">交易记录 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 12px; color: #aaa; margin-left: 6px; font-weight: normal; letter-spacing: 0;">Transaction History</span></div>
+                <div class="transaction-list" id="vault-history-list">
+                    <!-- Transactions will be injected here -->
+                    <div class="empty-state" id="vault-empty" style="padding: 30px 0;">
+                        <p style="font-size: 13px; color: #aaa;">暂无虚拟交易记录。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页2: 现实记账 (Daily Book) -->
+            <div id="bal-view-dailybook" class="mem-view-panel" style="background: #fff; padding: 0;">
+                <!-- 跳转到虚拟金库的按钮 -->
+                <div style="padding: 10px 20px;">
+                    <button id="goto-vault-btn" style="width: 100%; padding: 12px; border: 1px solid #111; background: transparent; color: #111; font-size: 14px; letter-spacing: 1px; cursor: pointer; border-radius: 8px;">
+                        &larr; 返回虚拟金库 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 12px; color: #888; margin-left: 4px; font-weight: normal; letter-spacing: 0;">Virtual Vault</span>
+                    </button>
+                </div>
+                
+                <!-- 顶部：预算与储蓄瓶 -->
+                <div class="ledger-header-area">
+                    <div class="ledger-budget-info">
+                        <div class="ledger-title">月度预算 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 11px; color: #aaa; margin-left: 4px; font-weight: normal;">Monthly Budget</span></div>
+                        <div class="ledger-budget-val" id="dailybook-budget-display">¥ 0.00 <span class="ledger-budget-total">/ ¥ 0.00</span></div>
+                        <button class="ledger-set-btn" id="set-budget-btn">设置限额</button>
+                    </div>
+                    <div class="ledger-wish-bottle-container" id="wish-bottle-container">
+                        <div class="ledger-wish-title">心愿瓶 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 11px; color: #aaa; margin-left: 4px; font-weight: normal;">Wish Bottle</span></div>
+                        <div class="wish-bottle-glass">
+                            <div class="wish-bottle-water" id="wish-bottle-water" style="height: 0%;"></div>
+                            <div class="wish-bottle-marks">
+                                <div class="wish-mark" style="bottom: 20%;"></div>
+                                <div class="wish-mark" style="bottom: 50%;"></div>
+                                <div class="wish-mark" style="bottom: 80%;"></div>
+                            </div>
+                        </div>
+                        <div class="ledger-wish-val" id="wish-bottle-val">¥ 0.00</div>
+                        <button class="ledger-set-btn" id="set-wish-btn" style="margin-top: 5px;">设置目标</button>
+                    </div>
+                </div>
+
+                <!-- 中部：记账与建议 -->
+                <div class="ledger-input-area">
+                    <div class="ledger-input-row">
+                        <input type="number" id="expense-amount" placeholder="金额 (¥)" class="ledger-input-amount">
+                        <select id="expense-category" class="ledger-input-category">
+                            <option value="Coffee">咖啡</option>
+                            <option value="Food">餐饮</option>
+                            <option value="Shopping">购物</option>
+                            <option value="Fun">娱乐</option>
+                            <option value="Other">其他</option>
+                        </select>
+                    </div>
+                    <input type="text" id="expense-note" placeholder="备注 (可选)" class="ledger-input-note">
+                    
+                    <div class="ledger-action-row">
+                        <button class="ledger-btn expense-btn" id="add-expense-btn">记一笔 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 11px; opacity: 0.7; margin-left: 2px; font-weight: normal;">Record</span></button>
+                        <button class="ledger-btn resist-btn" id="add-resist-btn">忍住了 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 11px; opacity: 0.7; margin-left: 2px; font-weight: normal;">Resisted</span></button>
+                    </div>
+                    
+                    <div class="ledger-advice-text" id="ledger-advice-text">
+                        "先设置你的预算和心愿目标吧，我会看着你的。"
+                    </div>
+                </div>
+
+                <!-- 底部：陈列馆 -->
+                <div class="ledger-gallery-title">物品陈列馆 <span style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 12px; color: #aaa; margin-left: 4px; font-weight: normal;">The Objects Gallery</span></div>
+                <div class="ledger-gallery-container" id="dailybook-timeline">
+                    <div class="empty-state" id="dailybook-empty" style="padding: 30px 0; grid-column: 1/-1;">
+                        <p style="font-size: 13px; color: #aaa; font-style: normal;">陈列馆里空空如也。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 记忆系统全屏页面 -->
+    <div id="memory-system-page">
+        <header class="wb-header">
+            <button class="back-btn" id="close-memory-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2 style="font-size: 16px;">记忆系统</h2>
+            <div style="width: 24px;"></div>
+        </header>
+        
+        <div class="mem-tabs-header">
+            <div class="mem-tab-item active" data-target="memories">回忆录</div>
+            <div class="mem-tab-item" data-target="habits">习惯集</div>
+            <div class="mem-tab-item" data-target="settings">设置</div>
+        </div>
+
+        <div class="mem-content-area">
+            <!-- 标签页1: 回忆录 -->
+            <div id="mem-view-memories" class="mem-view-panel active">
+                <div class="mem-actions-bar">
+                    <button class="save-btn" id="mem-manual-summary-btn" style="background:#333; color:#fff; width:100%; padding:12px; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class='bx bx-plus-circle'></i> 手动生成总结
+                    </button>
+                </div>
+                <div class="mem-list" id="mem-list-container">
+                    <!-- Memory Cards Injected Here -->
+                    <div class="empty-state" id="mem-empty-state" style="padding: 40px 0; text-align: center; color: #aaa;">
+                        <i class='bx bx-book-heart' style="font-size: 48px; margin-bottom: 10px;"></i>
+                        <p>暂无记忆，去聊聊天或手动总结吧</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页2: 习惯集 -->
+            <div id="mem-view-habits" class="mem-view-panel">
+                <div class="mem-notebook-container">
+                    <div class="mem-notebook-header">User Habits & Preferences</div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                        <input type="number" id="mem-extract-count" placeholder="提取近期记忆条数" value="5" min="1" style="flex: 1; padding: 8px; border: 1px solid #eaeaea; border-radius: 8px; font-size: 13px;">
+                        <button class="save-btn" id="mem-extract-habits-btn" style="background:#007AFF; color:#fff; padding:8px 15px; border-radius:8px; font-size:13px; white-space:nowrap;">
+                            <i class='bx bx-brain'></i> 提取习惯
+                        </button>
+                    </div>
+                    <textarea id="mem-user-habits" class="mem-notebook-textarea" placeholder="记录用户的喜好、习惯、禁忌等... (例如: 喜欢喝冰美式，半夜容易醒)"></textarea>
+                    <div style="text-align: right; margin-top: 10px;">
+                        <button class="save-btn" id="mem-save-habits-btn">保存修改</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页3: 设置 -->
+            <div id="mem-view-settings" class="mem-view-panel">
+                <div class="rp-card">
+                    <span class="rp-section-title">AI 读取设置</span>
+                    <div class="api-input-group">
+                        <label>读取上下文条数 (Context Limit)</label>
+                        <input type="number" id="mem-context-limit" value="20" min="1">
+                        <small style="color:#888; font-size:11px;">发送给 AI 的历史消息数量，过多可能导致遗忘或 Token 溢出。</small>
+                    </div>
+                    <div class="api-input-group" style="margin-top:15px;">
+                        <label>注入记忆条数 (Injection Limit)</label>
+                        <input type="number" id="mem-injection-limit" value="5" min="0">
+                        <small style="color:#888; font-size:11px;">每次对话从回忆录中提取的最新记忆数量。</small>
+                    </div>
+                </div>
+
+                <div class="rp-card" style="margin-top: 20px;">
+                    <span class="rp-section-title">自动总结设置</span>
+                    <div class="rp-toggle-row">
+                        <span class="rp-toggle-label">启用自动总结</span>
+                        <label class="switch">
+                            <input type="checkbox" id="mem-auto-summary-switch">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="api-input-group" style="margin-top:15px;">
+                        <label>触发阈值 (条数)</label>
+                        <input type="number" id="mem-auto-threshold" value="100" min="10">
+                        <small style="color:#888; font-size:11px;">每隔多少条对话自动触发一次总结。</small>
+                    </div>
+                    <button class="save-btn" id="mem-save-settings-btn" style="margin-top: 20px; width: 100%;">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 手动总结弹窗 -->
+    <div id="mem-manual-modal" class="ui-modal-overlay">
+        <div style="flex-grow: 1;" class="ui-modal-bg"></div>
+        <div class="ui-popup-card">
+            <div class="tp-header">
+                <button id="close-mem-manual-btn"><i class='bx bx-x'></i></button>
+                <span>手动生成总结</span>
+                <div style="width:28px;"></div>
+            </div>
+            
+            <div class="api-input-group">
+                <label>起始层数 (Start Index)</label>
+                <input type="number" id="mem-start-index" placeholder="0">
+            </div>
+            <div class="api-input-group" style="margin-top: 15px;">
+                <label>结束层数 (End Index)</label>
+                <input type="number" id="mem-end-index" placeholder="当前最大层数">
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 12px; color: #666; background: #f5f5f5; padding: 10px; border-radius: 8px;">
+                当前对话总条数: <span id="mem-total-count" style="font-weight:bold;">0</span>
+            </div>
+
+            <button class="tp-submit-btn" id="mem-generate-btn">开始生成</button>
+        </div>
+    </div>
+
+    <div id="beautify-page">
+        <header class="beautify-header">
+            <button class="back-btn" id="back-to-home-btn"><i class='bx bx-chevron-left'></i></button>
+            <h2 style="font-family: 'Times New Roman', Times, serif; font-style: italic; font-weight: 700; letter-spacing: 1px;">Aesthetic</h2>
+        </header>
+        <div class="beautify-content">
+            
+            <!-- Wallpapers Section -->
+            <div class="beautify-section">
+                <div class="section-title">
+                    <span>Wallpapers</span>
+                    <span class="section-subtitle">主屏幕壁纸</span>
+                </div>
+                <div class="wallpaper-carousel-container">
+                    <div class="wallpaper-carousel" id="wallpaper-gallery">
+                        <label for="upload-wallpaper" class="wallpaper-card add-wallpaper-card">
+                            <i class='bx bx-plus'></i>
+                            <span style="font-family: -apple-system, sans-serif;">Upload</span>
+                        </label>
+                        <div class="wallpaper-card" data-wallpaper="https://images.unsplash.com/photo-1619003309995-b95c05561335?q=80&w=1887&auto=format&fit=crop"></div>
+                        <div class="wallpaper-card" data-wallpaper="https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=1950&auto=format&fit=crop"></div>
+                        <div class="wallpaper-card" data-wallpaper="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App Icons Section -->
+            <div class="beautify-section">
+                <div class="section-title">
+                    <span>App Icons</span>
+                    <span class="section-subtitle">自定义应用图标</span>
+                </div>
+                
+                <div class="app-customizer-container">
+                    <div class="app-list-sidebar" id="app-list-sidebar">
+                        <!-- App list items injected here -->
+                    </div>
+                    <div class="app-editor-area">
+                        <div class="app-editor-card">
+                            <label for="upload-app-icon" class="app-icon-preview-large" id="app-icon-preview-large">
+                                <i class='bx bx-image-add'></i>
+                            </label>
+                            <input type="text" class="app-name-edit-input" id="app-name-edit-input" placeholder="App Name">
+                            <button class="premium-btn premium-save-btn" id="save-app-icon-btn" style="width: 100%;">Apply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fonts Section -->
+            <div class="beautify-section">
+                <div class="section-title">
+                    <span>Typography</span>
+                    <span class="section-subtitle">字体设置</span>
+                </div>
+                <div class="font-settings-card">
+                    <div class="font-input-group">
+                        <label>Font Name (字体名称)</label>
+                        <input type="text" id="font-family-input" placeholder="e.g. MyCustomFont">
+                    </div>
+                    <div class="font-input-group">
+                        <label>Font URL (字体链接 - 可选)</label>
+                        <input type="text" id="font-url-input" placeholder="https://.../font.ttf">
+                    </div>
+                    <div class="font-input-group" style="flex-direction: row; align-items: center; gap: 15px;">
+                        <label for="font-file-input" class="premium-btn premium-upload-btn" style="flex: 1; text-align: center;">Upload Font File</label>
+                        <button class="premium-btn premium-save-btn" id="save-font-btn" style="flex: 1;">Save Font</button>
+                    </div>
+                    <small style="display: block; margin-top: 10px; color: #888; text-align: center;" id="font-status-msg"></small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="hidden-file-inputs">
+    <input type="file" class="hidden-file-input" id="upload-wallpaper" accept="image/*">
+    <input type="file" class="hidden-file-input" id="font-file-input" accept=".ttf,.otf,.woff,.woff2">
+    <input type="file" class="hidden-file-input" id="upload-contact-avatar" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-user-avatar" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-chat-bg" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-chat-image" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-import-data" accept=".json">
+    <input type="file" class="hidden-file-input" id="upload-sticker-txt" accept=".txt">
+    <input type="file" class="hidden-file-input" id="upload-custom-gift-img" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-line-bg" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-line-avatar" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-line-frame" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-moment-image" accept="image/*" multiple>
+    <input type="file" class="hidden-file-input" id="upload-conv-bg" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-conv-bottom-bg" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-conv-avatar" accept="image/*">
+
+    <input type="file" class="hidden-file-input" id="upload-capsule-bg" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-capsule-avatar" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-small-rounded" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-polaroid-1" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-original-square" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-polaroid-row-1" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-polaroid-row-2" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-polaroid-row-3" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-large-rounded" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-app-icon" accept="image/*">
+    <input type="file" class="hidden-file-input" id="upload-ig-avatar" accept="image/*">
+</div>
+
+<audio id="keep-alive-audio" loop src="silent.wav" style="display:none;"></audio>
+
+<script src="app.js?v=4"></script>
+<script src="features.js?v=4"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                console.log('SW registered!', reg);
+            }).catch(err => {
+                console.log('SW registration failed: ', err);
+            });
+        });
+    }
+</script>
+</body>
+</html>
