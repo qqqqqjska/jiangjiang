@@ -48,6 +48,8 @@
         width: 100%;
         height: 100vh;
         height: -webkit-fill-available;
+        display: block !important;
+        background: transparent !important;
     }
     
     body.pwa-standalone #phone-screen {
@@ -64,20 +66,32 @@
 
     body.ios-standalone #phone-screen,
     body.ios-standalone .phone-screen {
+        position: fixed;
         inset: 0;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        width: 100%;
+        width: 100vw;
+        width: 100dvw;
+        height: 100vh;
         height: 100dvh;
         height: -webkit-fill-available;
+        min-height: 100vh;
         min-height: 100dvh;
         min-height: -webkit-fill-available;
-        max-width: 100%;
+        max-width: none;
         max-height: none;
         margin: 0;
         border-radius: 0;
+    }
+
+    body.ios-standalone #home-screen-page,
+    body.ios-standalone #beautify-page,
+    body.ios-standalone #chat-app-page,
+    body.ios-standalone .home-swiper,
+    body.ios-standalone .home-page {
+        min-height: 100%;
     }
 
     /* Add Safe Area Padding to Bottom Navs to lift them above Home Indicator */
