@@ -23,11 +23,25 @@
                 width: 100%;
                 height: 100vh;
                 height: -webkit-fill-available;
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
+                display: block;
             }
 
             .phone-screen {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                width: 100dvw;
                 height: 100vh;
+                height: 100dvh;
                 height: -webkit-fill-available;
+                min-height: 100vh;
+                min-height: 100dvh;
+                min-height: -webkit-fill-available;
+                max-width: none;
+                max-height: none;
+                margin: 0;
             }
         }
         
@@ -156,6 +170,13 @@
             background-image: none;
             background-size: cover; background-position: center;
             transition: background-image 0.5s ease, background-color 0.5s ease;
+        }
+
+        @media (max-width: 599px) {
+            .phone-screen {
+                max-width: none;
+                max-height: none;
+            }
         }
 
         @media (min-width: 600px) {
