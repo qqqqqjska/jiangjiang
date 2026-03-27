@@ -159,7 +159,7 @@
             }
         }
         #home-screen-page, #beautify-page, #chat-app-page { height: 100%; display: flex; flex-direction: column; width: 100%; background-color: #fff; position: absolute; top: 0; left: 0; z-index: 100; }
-        #home-screen-page { background-color: transparent; position: relative; z-index: 1; }
+        #home-screen-page { background-color: transparent; position: absolute; inset: 0; z-index: 1; }
         #beautify-page, #chat-app-page { display: none; }
         
         /* 聊天软件样式 (高级重塑) */
@@ -2060,8 +2060,8 @@
 
 /* --- NEW UI STYLES --- */
 #home-screen-page {
-    position: relative;
-    height: 100%;
+    position: absolute;
+    inset: 0;
     width: 100%;
     overflow: hidden;
     background: transparent;
