@@ -2382,7 +2382,7 @@ body.ios-standalone .home-page {
 }
 body.pwa-standalone .floating-dock,
 body.ios-standalone .floating-dock {
-    bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    bottom: 0;
 }
 .floating-dock .icon-customizable {
     width: 74px;
