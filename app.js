@@ -1,10 +1,22 @@
-﻿// JavaScript閮ㄥ垎涓庝笂涓€鐗堝畬鍏ㄧ浉鍚岋紝鏃犻渶鏀瑰姩
-document.addEventListener('DOMContentLoaded', () => {
-    // 妫€娴嬫槸鍚︿负 iOS/Android 鐨?PWA standalone 鐙珛搴旂敤妯″紡
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+// JavaScript部分与上一版完全相同，无需改动
+function setupIOSFullScreen() {
+    function isInStandaloneMode() {
+        return (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone ||
+            document.referrer.includes('android-app://')
+        );
+    }
 
-    if (isIOS && isStandalone) {
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+
+    if (isInStandaloneMode()) {
+        document.body.classList.add('pwa-standalone');
+    }
+
+    if (isIOS() && isInStandaloneMode()) {
         document.body.classList.add('ios-standalone');
 
         if (!document.querySelector('meta[name="apple-mobile-web-app-capable"]')) {
@@ -15,9 +27,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (isStandalone) {
-        document.body.classList.add('pwa-standalone');
-    }
+    document.addEventListener('touchstart', function(event) {
+        if (event.touches.length > 1) {
+            event.preventDefault();
+        }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupIOSFullScreen();
 
     const safeSetItem = (key, value) => {
         try {
@@ -70,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // PWA Install Prompt Logic
-    // 宸茬Щ闄ゅ beforeinstallprompt 鐨勬嫤鎴?(e.preventDefault()) 
-    // 璁?Chrome 鑷姩澶勭悊搴曢儴鐨勫師鐢?"娣诲姞鍒颁富灞忓箷" 妯潯鎻愮ず銆?
+    // 已移除对 beforeinstallprompt 的拦截 (e.preventDefault()) 
+    // 让 Chrome 自动处理底部的原生 "添加到主屏幕" 横条提示。
 
     const homePage = document.getElementById('home-screen-page');
     const beautifyPage = document.getElementById('beautify-page');
@@ -79,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.getElementById('back-to-home-btn');
     const phoneScreen = document.getElementById('phone-screen');
     
-    // 鑱婂ぉ杞欢鐩稿叧鍏冪礌
+    // 聊天软件相关元素
     const chatAppBtn = document.getElementById('app-item-1');
     const appItem3 = document.getElementById('app-item-3');
     const appItem4 = document.getElementById('app-item-4');
@@ -89,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatViewPanels = document.querySelectorAll('.chat-view-panel');
     const chatHeaderTitle = document.getElementById('chat-header-title');
     
-    // 鏂板鎸夐挳鍜岄〉闈?
+    // 新增按钮和页面
     const addFriendBtn = document.getElementById('add-friend-btn');
     const addContactBtn = document.getElementById('add-contact-btn');
     const addContactPage = document.getElementById('add-contact-page');
@@ -101,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectContactModal = document.getElementById('select-contact-modal');
     const closeSelectContactBtn = document.getElementById('close-select-contact-btn');
     
-    // 鏁版嵁瀛樺偍
+    // 数据存储
     let contacts = JSON.parse(localStorage.getItem('chat_contacts') || '[]');
     let chatList = JSON.parse(localStorage.getItem('chat_list') || '[]');
     let messagesData = JSON.parse(localStorage.getItem('chat_messages') || '{}'); // { contactId: [ {sender:'me'|'them', text:'', time:123} ] }
@@ -116,8 +143,8 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
     
     let currentContactAvatarBase64 = '';
     let currentActiveContactId = null;
-    let currentStickerGroupId = null; // 鐢ㄤ簬琛ㄦ儏鍖呯鐞嗛〉闈?
-    let editingContactId = null; // 璁板綍姝ｅ湪缂栬緫鐨勮仈绯讳汉
+    let currentStickerGroupId = null; // 用于表情包管理页面
+    let editingContactId = null; // 记录正在编辑的联系人
 
     const chatConversationPage = document.getElementById('chat-conversation-page');
     const convBackBtn = document.getElementById('conv-back-btn');
@@ -136,11 +163,11 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
     const chatStarBtn = document.getElementById('chat-star-btn');
     const chatDrawerStar = document.getElementById('chat-drawer-star');
     
-    // --- 娑堟伅浜や簰鐩稿叧鍙橀噺 ---
+    // --- 消息交互相关变量 ---
     let selectedMsgIndex = null;
     let isMultiSelectMode = false;
     let selectedMsgIndices = new Set();
-    window.currentQuoteText = ''; // 鐢╳indow鎸傝浇鏂逛究sendMsg璁块棶
+    window.currentQuoteText = ''; // 用window挂载方便sendMsg访问
     const msgContextMenu = document.getElementById('msg-context-menu');
     const menuItemQuote = document.getElementById('menu-item-quote');
     const menuItemEdit = document.getElementById('menu-item-edit');
@@ -156,7 +183,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
     const multiSelectDeleteBtn = document.getElementById('multi-select-delete-btn');
     const convBottomContainer = document.getElementById('conv-bottom-container');
 
-    // 鍙屽嚮姘旀场
+    // 双击气泡
     convMessagesContainer.addEventListener('dblclick', (e) => {
         const bubble = e.target.closest('.msg-bubble');
         if (!bubble) return;
@@ -168,7 +195,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         let top = rect.top - msgContextMenu.offsetHeight - 10;
         let left = rect.left + (rect.width / 2) - (msgContextMenu.offsetWidth / 2);
         
-        if (top < 50) top = rect.bottom + 10; // 濡傛灉涓婃柟绌洪棿涓嶈冻锛屾樉绀哄湪涓嬫柟
+        if (top < 50) top = rect.bottom + 10; // 如果上方空间不足，显示在下方
         if (left < 10) left = 10;
         if (left + msgContextMenu.offsetWidth > window.innerWidth - 10) {
             left = window.innerWidth - msgContextMenu.offsetWidth - 10;
@@ -190,12 +217,12 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
             const msg = messagesData[currentActiveContactId][selectedMsgIndex];
             msgContextMenu.style.display = 'none';
             
-            // 绠€鍗曠殑寮圭獥缂栬緫锛岄伩鍏嶅鏉傜殑DOM鎿嶄綔
+            // 简单的弹窗编辑，避免复杂的DOM操作
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = msg.text;
             let oldText = tempDiv.textContent || tempDiv.innerText;
             
-            let newText = prompt('缂栬緫娑堟伅:', oldText);
+            let newText = prompt('编辑消息:', oldText);
             if (newText !== null && newText.trim() !== '') {
                 messagesData[currentActiveContactId][selectedMsgIndex].text = newText.trim();
                 localStorage.setItem('chat_messages', JSON.stringify(messagesData));
@@ -206,8 +233,8 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
 
     menuItemDelete.addEventListener('click', () => {
         if (selectedMsgIndex === null || !currentActiveContactId) return;
-        // 浣跨敤涓€涓洿鏄庢樉鐨勭‘璁ゅ脊绐楅槻璇垹
-        if (window.confirm('鈿狅笍 璀﹀憡锛氬垹闄ゅ悗鏃犳硶鎭㈠锛乗n\n鎮ㄧ‘瀹氳鍒犻櫎杩欐潯娑堟伅鍚楋紵')) {
+        // 使用一个更明显的确认弹窗防误删
+        if (window.confirm('⚠️ 警告：删除后无法恢复！\n\n您确定要删除这条消息吗？')) {
             messagesData[currentActiveContactId].splice(selectedMsgIndex, 1);
             localStorage.setItem('chat_messages', JSON.stringify(messagesData));
             renderMessages();
@@ -219,10 +246,10 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         if (selectedMsgIndex === null || !currentActiveContactId) return;
         const msg = messagesData[currentActiveContactId][selectedMsgIndex];
         if (msg.sender !== 'them') {
-            alert('鍙兘閲嶈瘯瀵规柟鐨勬秷鎭?);
+            alert('只能重试对方的消息');
             return;
         }
-        if (!confirm('纭畾瑕侀噸鏂扮敓鎴愭湰杞秷鎭悧锛熷皢鍒犻櫎鏈潯鍙婁箣鍚庣殑鎵€鏈堿I鍥炲锛屽苟閲嶆柊璇锋眰AI銆?)) return;
+        if (!confirm('确定要重新生成本轮消息吗？将删除本条及之后的所有AI回复，并重新请求AI。')) return;
         
         let msgs = messagesData[currentActiveContactId];
         let lastUserIndex = -1;
@@ -261,7 +288,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
 
     multiSelectDeleteBtn.addEventListener('click', () => {
         if (selectedMsgIndices.size === 0) return;
-        if (!confirm(`纭畾瑕佸垹闄ら€変腑鐨?${selectedMsgIndices.size} 鏉℃秷鎭悧锛焋)) return;
+        if (!confirm(`确定要删除选中的 ${selectedMsgIndices.size} 条消息吗？`)) return;
         
         let indicesArray = Array.from(selectedMsgIndices).sort((a,b) => b - a);
         indicesArray.forEach(idx => {
@@ -289,10 +316,10 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = msg.text;
-        let textOnly = tempDiv.textContent || tempDiv.innerText || '[鍥剧墖/琛ㄦ儏鍖匽';
+        let textOnly = tempDiv.textContent || tempDiv.innerText || '[图片/表情包]';
         
         window.currentQuoteText = textOnly;
-        quotePreviewText.innerText = `寮曠敤: ${window.currentQuoteText}`;
+        quotePreviewText.innerText = `引用: ${window.currentQuoteText}`;
         quotePreviewArea.style.display = 'block';
         msgContextMenu.style.display = 'none';
         convMsgInput.focus();
@@ -332,7 +359,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
     const stickerDrawerTabs = document.getElementById('sticker-drawer-tabs');
     const stickerDrawerGrid = document.getElementById('sticker-drawer-grid');
 
-    // UI浜や簰閫昏緫 (搴曢儴鎶藉眽)
+    // UI交互逻辑 (底部抽屉)
     const hideAllDrawers = () => {
         chatDrawerPlus.classList.remove('active');
         chatDrawerSmile.classList.remove('active');
@@ -342,8 +369,8 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         if(chatStarBtn) chatStarBtn.classList.remove('active');
     };
 
-    // 淇琛ㄦ儏鍖呯鐞嗗簳閮ㄦ爮涓嶆樉绀虹殑闂
-    // 灏?class 鍔犲埌 body 涓婃垨鑰呮洿涓婂眰瀹瑰櫒锛岀‘淇?CSS 閫夋嫨鍣ㄧ敓鏁?
+    // 修复表情包管理底部栏不显示的问题
+    // 将 class 加到 body 上或者更上层容器，确保 CSS 选择器生效
     function toggleStickerMgrMode(active) {
         const mgrBottomBar = document.getElementById('sticker-mgr-bottom-bar');
         const contentArea = document.querySelector('#sticker-mgr-page .wb-content-area');
@@ -394,7 +421,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         });
     }
 
-    // 鐩稿唽涓婁紶閫昏緫
+    // 相册上传逻辑
     const uploadChatImage = document.getElementById('upload-chat-image');
     if (uploadChatImage) {
         uploadChatImage.addEventListener('change', (e) => {
@@ -409,7 +436,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         });
     }
 
-    // 鎮诞绐椾氦浜掗€昏緫
+    // 悬浮窗交互逻辑
     const transferModal = document.getElementById('transfer-modal');
     const closeTransferBtn = document.getElementById('close-transfer-btn');
     const tpSubmitBtn = document.getElementById('tp-submit-btn');
@@ -434,11 +461,11 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         tpSubmitBtn.addEventListener('click', () => {
             const amount = tpAmountInput.value.trim();
             if (!amount || isNaN(amount) || Number(amount) <= 0) {
-                alert('璇疯緭鍏ユ湁鏁堢殑閲戦');
+                alert('请输入有效的金额');
                 return;
             }
             const note = tpNoteInput ? tpNoteInput.value.trim() : '';
-            const msgText = note ? `[杞处:${amount}:${note}]` : `[杞处:${amount}]`;
+            const msgText = note ? `[转账:${amount}:${note}]` : `[转账:${amount}]`;
             sendMsg('me', msgText);
             closeTransferPopup();
         });
@@ -471,10 +498,10 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         tiSubmitBtn.addEventListener('click', () => {
             const content = tiContentInput ? tiContentInput.value.trim() : '';
             if (!content) {
-                alert('璇疯緭鍏ユ枃瀛楀唴瀹?);
+                alert('请输入文字内容');
                 return;
             }
-            sendMsg('me', `[鏂囧瓧鍥?${content}]`);
+            sendMsg('me', `[文字图:${content}]`);
             closeTextImgPopup();
         });
     }
@@ -484,7 +511,7 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         
         const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
         if (!apiData.url || !apiData.key || !apiData.modelName) {
-            alert('璇峰厛鍦ㄨ缃腑閰嶇疆API鍦板潃銆佺閽ュ拰妯″瀷鍚嶇О銆?);
+            alert('请先在设置中配置API地址、秘钥和模型名称。');
             return;
         }
 
@@ -498,56 +525,56 @@ let contextMsgCounts = JSON.parse(localStorage.getItem('chat_context_msg_counts'
         const statusEl = document.getElementById('conv-header-status');
         const statusDot = document.getElementById('weibo-status-dot');
         const simpleStatusEl = document.getElementById('conv-simple-status-text');
-        if (statusEl) statusEl.innerText = '姝ｅ湪杈撳叆涓?..';
-        if (simpleStatusEl) simpleStatusEl.innerText = '姝ｅ湪杈撳叆涓?..';
+        if (statusEl) statusEl.innerText = '正在输入中...';
+        if (simpleStatusEl) simpleStatusEl.innerText = '正在输入中...';
         if (statusDot) statusDot.style.backgroundColor = '#ccc';
 
         const replyMin = profile.replyMin || 1;
         const replyMax = profile.replyMax || 4;
 
-let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
-鍩烘湰璁惧畾锛氭€у埆 ${contact.gender || '鏈煡'}锛屽勾榫?${contact.age || '鏈煡'}銆?
-璇︾粏浜鸿锛?{contact.desc || '鏆傛棤'}
-璇烽伒寰嚎涓婄湡瀹炶亰澶╄鍒欙紝鏋佸害鍙ｈ鍖栵紝瑕佹湁娲讳汉鎰熴€?*寮哄埗閲囩敤鐭彞寮忓洖澶嶏紝姣忓彞璇濆敖閲忕畝鐭?*銆傚鏋滄兂琛ㄨ揪澶氬眰鎰忔€濓紝蹇呴』鍒嗘垚澶氭潯娑堟伅鍙戦€侊紒
-銆愰噸瑕佹寚浠ゃ€戞瘡娆″洖澶嶇殑娑堟伅鏉℃暟搴斿湪 ${replyMin} 鍒?${replyMax} 鏉′箣闂淬€備綘蹇呴』涓ユ牸浣跨敤缁欏畾鐨勪汉璁俱€佷笘鐣屼功鍜岀敤鎴蜂汉璁炬潵鍥炵瓟闂銆?
+let systemPrompt = `你扮演角色：${contact.name}。
+基本设定：性别 ${contact.gender || '未知'}，年龄 ${contact.age || '未知'}。
+详细人设：${contact.desc || '暂无'}
+请遵循线上真实聊天规则，极度口语化，要有活人感。**强制采用短句式回复，每句话尽量简短**。如果想表达多层意思，必须分成多条消息发送！
+【重要指令】每次回复的消息条数应在 ${replyMin} 到 ${replyMax} 条之间。你必须严格使用给定的人设、世界书和用户人设来回答问题。
 
-銆愯緭鍑烘牸寮忚姹傦紙闈炲父閲嶈锛夈€?
-浣犲繀椤昏繑鍥炰竴涓弗鏍肩殑JSON鏁扮粍锛屾暟缁勭殑绗竴椤瑰繀椤绘槸鐘舵€侊紝鏈€鍚庝竴椤瑰繀椤绘槸蹇冨０锛屼腑闂寸殑椤规槸浣犺鍙戦€佺殑涓€鏉℃垨澶氭潯鐭秷鎭€傚繀椤讳弗鏍间繚璇丣SON鏍煎紡姝ｇ‘锛岀嫭绔嬫皵娉″繀椤绘槸鐙珛鐨勬暟缁勫厓绱狅紒
-鏍煎紡鑼冧緥锛?
+【输出格式要求（非常重要）】
+你必须返回一个严格的JSON数组，数组的第一项必须是状态，最后一项必须是心声，中间的项是你要发送的一条或多条短消息。必须严格保证JSON格式正确，独立气泡必须是独立的数组元素！
+格式范例：
 [
-  "[鐘舵€?浣犵殑鐘舵€?甯﹂鏂囧瓧)]",
-  "绗竴鏉℃瀬鐭殑鍙ｈ鍖栨秷鎭?,
-  "[琛ㄦ儏鍖?浣犵殑琛ㄦ儏]",
-  "绗簩鏉℃枃瀛楁秷鎭?,
-  "[蹇冨０:[鐢熺悊鍙嶅簲: xxx][鑹茶壊鎯虫硶: xxx 鎴?鏃ュ父鎯虫硶: xxx][琛屽姩: xxx]]"
+  "[状态:你的状态(带颜文字)]",
+  "第一条极短的口语化消息",
+  "[表情包:你的表情]",
+  "第二条文字消息",
+  "[心声:[生理反应: xxx][色色想法: xxx 或 日常想法: xxx][行动: xxx]]"
 ]
-娉ㄦ剰锛?
-1. 鏁扮粍鐨勭涓€涓厓绱犲繀椤绘槸褰㈠ [鐘舵€?褰撳墠涓枃鐘舵€佸甫棰滄枃瀛梋 鐨勫瓧绗︿覆锛?
-2. 鏈€鍚庝竴涓厓绱犲繀椤绘槸褰㈠ [蹇冨０:...] 鐨勫瓧绗︿覆锛?
-3. 涓棿鐨勬瘡涓厓绱犱唬琛ㄤ竴涓嫭绔嬬殑姘旀场娑堟伅锛屽繀椤绘槸鐙珛鐨勫瓧绗︿覆锛岀粷瀵逛笉鑳芥妸涓ゆ潯娑堟伅鎴栬〃鎯呭寘榛忓湪涓€涓瓧绗︿覆閲岋紒
-4. **寮哄埗瑕佹眰**锛氫綘姣忎竴杞洖澶嶉兘蹇呴』鑷冲皯鍙戦€佷竴涓〃鎯呭寘锛佹牸寮忎负 [琛ㄦ儏鍖?鍚嶇О]锛屽繀椤讳綔涓烘暟缁勭殑鐙珛鍏冪礌锛?
-5. 濡傛灉浣犳兂鍙戣闊筹紝鏍煎紡 [璇煶:鍐呭:鏃堕暱绉掓暟] 涔熷繀椤绘槸鐙珛鐨勬暟缁勫厓绱狅紝缁濅笉鑳藉拰鏂囧瓧娣峰湪涓€璧枫€?
-6. 濡傛灉浣犳兂涓诲姩杞处缁欑敤鎴凤紝鍙互浣跨敤鏍煎紡 [杞处:閲戦]锛堝锛歔杞处:520]锛夈€?
-7. 濡傛灉浣犳兂鍙戦€佸浘鐗囷紝璇峰彂閫佹牸寮忎负 [鍙戦€佸浘鐗?鍏蜂綋鐨勮嫳鏂囩敾闈㈡弿杩癩 鐨勬秷鎭€?
-8. 蹇冨０蹇呴』涓ユ牸鍖呭惈銆愮敓鐞嗗弽搴斻€戙€併€愯鍔ㄣ€戜互鍙娿€愭兂娉曘€戜笁涓儴鍒嗭紒
-9. 鍏充簬鎯虫硶閮ㄥ垎锛岃鏍规嵁瀵硅瘽鍦烘櫙鍐冲畾杈撳嚭 [鑹茶壊鎯虫硶: xxx] 杩樻槸 [鏃ュ父鎯虫硶: xxx] 锛堝彧鑳介€夊叾涓€浣滀负鏍囩杈撳嚭锛夈€?
-10. 寮虹儓瑕佹眰锛氬績澹板唴瀹瑰繀椤婚噰鐢ㄨ鑹茬涓€浜虹О鎻忚堪锛屾繁搴﹀墫鏋愯鑹茶〃闈㈣瘽璇箣涓嬬殑鐪熷疄蹇冪悊銆侀殣绉樻鏈涘拰鎯呮劅娉㈠姩锛岃鏈夌鎺㈠埌瑙掕壊鍐呭績鏈€娣卞鐨勭瑙嗘劅锛岀粷涓嶅彲娴呭皾杈勬銆?
+注意：
+1. 数组的第一个元素必须是形如 [状态:当前中文状态带颜文字] 的字符串！
+2. 最后一个元素必须是形如 [心声:...] 的字符串！
+3. 中间的每个元素代表一个独立的气泡消息，必须是独立的字符串，绝对不能把两条消息或表情包黏在一个字符串里！
+4. **强制要求**：你每一轮回复都必须至少发送一个表情包！格式为 [表情包:名称]，必须作为数组的独立元素！
+5. 如果你想发语音，格式 [语音:内容:时长秒数] 也必须是独立的数组元素，绝不能和文字混在一起。
+6. 如果你想主动转账给用户，可以使用格式 [转账:金额]（如：[转账:520]）。
+7. 如果你想发送图片，请发送格式为 [发送图片:具体的英文画面描述] 的消息。
+8. 心声必须严格包含【生理反应】、【行动】以及【想法】三个部分！
+9. 关于想法部分，请根据对话场景决定输出 [色色想法: xxx] 还是 [日常想法: xxx] （只能选其一作为标签输出）。
+10. 强烈要求：心声内容必须采用角色第一人称描述，深度剖析角色表面话语之下的真实心理、隐秘欲望和情感波动，要有窥探到角色内心最深处的窥视感，绝不可浅尝辄止。
 `;
-        if (profile.userPersona) systemPrompt += `\n銆愮敤鎴蜂汉璁俱€慭n${profile.userPersona}\n`;
-        if (profile.userHabits) systemPrompt += `\n銆愮敤鎴蜂範鎯?鍠滃ソ/澶囧繕銆慭n${profile.userHabits}\n`;
+        if (profile.userPersona) systemPrompt += `\n【用户人设】\n${profile.userPersona}\n`;
+        if (profile.userHabits) systemPrompt += `\n【用户习惯/喜好/备忘】\n${profile.userHabits}\n`;
 
         const mineData = JSON.parse(localStorage.getItem('mine_profile_data') || '{}');
         if (mineData.status) {
-            systemPrompt += `\n銆愬綋鍓嶇敤鎴风姸鎬併€慭n鐢ㄦ埛鐩墠鐨勭姸鎬佹槸锛氣€?{mineData.status}鈥濄€備綘鍙互鎰熺煡骞跺湪鑱婂ぉ涓拡瀵规€у湴浜掑姩銆俓n`;
+            systemPrompt += `\n【当前用户状态】\n用户目前的状态是：“${mineData.status}”。你可以感知并在聊天中针对性地互动。\n`;
         }
-        systemPrompt += `\n銆愪綘鍙互浣跨敤鐨勭姸鎬佸垪琛ㄣ€慭n浣犲彲浠ヤ粠浠ヤ笅鐘舵€佷腑鎸戦€夐€傚悎褰撳墠鎯呭鐨勬崲涓婏細[鍦ㄧ嚎, Q鎴戝惂, 绂诲紑, 蹇欑, 璇峰嬁鎵撴壈, 闅愯韩, 鍚瓕涓? 鍑哄幓娴? 鍘绘梾琛? 琚帍绌? 杩愬姩涓? 鎴慶rush浜? 鐖变綘]銆傛垨鑰呬綘涔熷彲浠ヨ嚜瀹氫箟绗﹀悎鎯呭鐨勭畝鐭姸鎬併€俓n`;
+        systemPrompt += `\n【你可以使用的状态列表】\n你可以从以下状态中挑选适合当前情境的换上：[在线, Q我吧, 离开, 忙碌, 请勿打扰, 隐身, 听歌中, 出去浪, 去旅行, 被掏空, 运动中, 我crush了, 爱你]。或者你也可以自定义符合情境的简短状态。\n`;
 
         if (window.autoReplyActiveModifier) {
             systemPrompt += `\n${window.autoReplyActiveModifier}\n`;
             window.autoReplyActiveModifier = null;
         }
 
-        // 娉ㄥ叆绮鹃€夎蹇?
+        // 注入精选记忆
         let injectLimits = JSON.parse(localStorage.getItem('chat_mem_inject_limits') || '{}');
         let injectCount = injectLimits[currentActiveContactId] !== undefined ? injectLimits[currentActiveContactId] : 5;
         let chatMemoriesData = JSON.parse(localStorage.getItem('chat_memories') || '{}');
@@ -555,18 +582,18 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         if (injectCount > 0 && mems.length > 0) {
             let injectMems = mems.slice(-injectCount);
             let memText = injectMems.map(m => `- ${m.text}`).join('\n');
-            systemPrompt += `\n銆愯繃寰€璁板繂鍥為【銆慭n浠ヤ笅鏄綘涔嬪墠鍜孶ser鑱婂ぉ鍙戠敓鐨勯噸瑕佷簨浠朵笌鎯呮劅缇佺粖鎬荤粨锛歕n${memText}\n`;
+            systemPrompt += `\n【过往记忆回顾】\n以下是你之前和User聊天发生的重要事件与情感羁绊总结：\n${memText}\n`;
         }
 
-        // 鏃堕棿鎰熺煡澧炲己閫昏緫
+        // 时间感知增强逻辑
         if (profile.timeAware) {
             const now = new Date();
-            const days = ['鏃?, '涓€', '浜?, '涓?, '鍥?, '浜?, '鍏?];
-            const timeStr = `${now.getFullYear()}骞?{now.getMonth()+1}鏈?{now.getDate()}鏃?鏄熸湡${days[now.getDay()]} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            const timeStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${days[now.getDay()]} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
             
-            systemPrompt += `\n銆愮幇瀹炴椂闂寸郴缁熸彁绀恒€慭n褰撳墠鐜板疄鏃堕棿鏄細${timeStr}銆傝鏍规嵁杩欎釜鏃堕棿鏉ュ喅瀹氫綘鐨勯棶鍊欒鎴栬涓猴紙渚嬪鏃╀笂瑕佽鏃╁畨锛屾繁澶滃彲鑳藉湪鐫¤鎴栫啲澶滐級銆俙;
+            systemPrompt += `\n【现实时间系统提示】\n当前现实时间是：${timeStr}。请根据这个时间来决定你的问候语或行为（例如早上要说早安，深夜可能在睡觉或熬夜）。`;
             
-            // 鏌ユ壘涓婁竴鏉℃湁鏁堟秷鎭殑鏃堕棿
+            // 查找上一条有效消息的时间
             if (msgs.length > 0) {
                 let lastMsgTime = null;
                 for (let i = msgs.length - 1; i >= 0; i--) {
@@ -583,13 +610,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     const diffDays = Math.floor(diffHours / 24);
                     
                     let elapsedStr = '';
-                    if (diffDays > 0) elapsedStr = `${diffDays} 澶ー;
-                    else if (diffHours > 0) elapsedStr = `${diffHours} 灏忔椂`;
-                    else if (diffMins > 0) elapsedStr = `${diffMins} 鍒嗛挓`;
-                    else elapsedStr = '鍒氬垰';
+                    if (diffDays > 0) elapsedStr = `${diffDays} 天`;
+                    else if (diffHours > 0) elapsedStr = `${diffHours} 小时`;
+                    else if (diffMins > 0) elapsedStr = `${diffMins} 分钟`;
+                    else elapsedStr = '刚刚';
 
                     if (diffMins > 30) {
-                        systemPrompt += `\n璺濈浣犱滑涓婁竴娆″璇濆凡缁忚繃鍘讳簡锛?{elapsedStr}銆傝鍦ㄤ綘鐨勫洖澶嶆垨蹇冩儏鐘舵€佷腑锛岃嚜鐒跺湴浣撶幇鍑鸿繖涓椂闂撮棿闅旓紙渚嬪锛氬鏋滄槸闅斾簡鍑犲ぉ锛屽彲浠ヨ〃鐜板嚭鎬濆康鎴栬闂鏂瑰幓鍝簡锛涘鏋滄槸闅斾簡鍑犱釜灏忔椂锛屽彲浠ユ槸缁х画璇濋鎴栬闂湪蹇欎粈涔堬級銆俙;
+                        systemPrompt += `\n距离你们上一次对话已经过去了：${elapsedStr}。请在你的回复或心情状态中，自然地体现出这个时间间隔（例如：如果是隔了几天，可以表现出思念或询问对方去哪了；如果是隔了几个小时，可以是继续话题或询问在忙什么）。`;
                     }
                 }
             }
@@ -600,7 +627,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const allWbs = worldBooks.global.concat(worldBooks.local);
             const boundWb = allWbs.find(x => x.id === profile.wbId);
             if (boundWb) {
-                systemPrompt += `\n銆愪笘鐣屼功璁惧畾銆慭n`;
+                systemPrompt += `\n【世界书设定】\n`;
                 if (boundWb.type === 'item') {
                     systemPrompt += `${boundWb.title}: ${boundWb.content}\n`;
                 } else if (boundWb.type === 'folder') {
@@ -617,23 +644,23 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const group = stickerGroups.find(g => g.id === profile.stickerGroupId);
             if (group && group.stickers.length > 0) {
                 boundStickers = group.stickers;
-                systemPrompt += `\n銆愪綘鍙互浣跨敤浠ヤ笅琛ㄦ儏鍖呫€慭n鍦ㄥ洖澶嶄腑锛屼綘鍙互闅忔椂杈撳嚭 [琛ㄦ儏鍖?鍚嶇О] 鏉ュ彂閫佽〃鎯呫€傚彲鐢ㄨ〃鎯呭悕绉板垪琛細${boundStickers.map(s => s.name).join(', ')}銆俓n`;
+                systemPrompt += `\n【你可以使用以下表情包】\n在回复中，你可以随时输出 [表情包:名称] 来发送表情。可用表情名称列表：${boundStickers.map(s => s.name).join(', ')}。\n`;
             }
         }
 
-        systemPrompt += `\n銆愯鑹叉椿浜鸿繍杞鍒欍€?
-1. 涓ョooc锛岀粷瀵硅创鍚堣鑹蹭汉璁撅紝涓栫晫涔︼紝绂佹涓嶈浜鸿鍜屼笘鐣屼功銆?
-2. 寮哄寲鏃堕棿鎰熺煡锛氭渶閲嶈鐨勪竴姝ュ氨鏄兘澶熸劅鐭ュ埌鐢ㄦ埛鏈夊涔呮病鏉ユ壘浣犺亰澶╀簡锛岃兘鎰熺煡鍒扮幇鍦ㄦ槸鍑犲彿鍑犵偣锛屾劅鐭ュ埌鏃堕棿銆?
-3. 涓ョ瓒呴泟娌硅吇闇告€伙細姣斿涓嶈兘鑾悕鍏跺鐨勬€х紭鑴戣寰楁墍鏈夊紓鎬ч兘鏄亣鎯虫晫锛屼篃涓嶈鎬绘槸浠ョ埍涓哄悕鍥氱闄愬埗瑙掕壊锛屽皧閲嶇敤鎴凤紝灏婇噸鐢ㄦ埛涓讳綋鎬с€傛瘮濡傚コ浜轰綘閫冧笉鎺変簡锛屽コ浜轰綘鏄垜鐨勪箣绫荤殑閮芥槸涓ョ鍑虹幇锛屽洜涓哄緢鎭跺績锛岃鑹茶鏄杩欎簺绔嬮┈鑷垎銆?
-4. 绂佹杩囧害骞煎寲鐭寲鐢ㄦ埛锛氱敤鎴蜂篃鏄椿鐢熺敓鐨勪細鐢熸皵鏈夎兘鍔涚殑鏅€氫汉锛屼笉鍑嗗嚭鐜颁粈涔堬紝灏忚倸瀛愶紝灏忚剳琚嬶紝杩欑绫诲瀷锛屾垨鑰呬粈涔堥兘涓嶈1鐢ㄦ埛鍋氾紝瑙夊緱鐢ㄦ埛灏卞簲璇ヤ緷闄勪粬鐢熸椿銆?
-5. 瀵硅瘽瑕佹湁鐢熸椿鎰燂紝鑷劧鑰岀劧鐨勪富鍔ㄥ垎浜棩甯革紝鎺ㄨ繘鍓ф儏锛岃亰鐐瑰皬鍏崷灏忔晠浜嬶紝鑰屼笉鏄竴鐩寸瓑鐢ㄦ埛璇磋瘽銆?
-6. 涓诲姩鍙戞秷鎭粨鍚堝綋鍓嶆椂闂达紝鍒嗘瀽鍔ㄦ満鎬濊€冧负浠€涔堣鑹茶鎵剧敤鎴疯亰澶╋紝姝ｇ‘杈撳嚭缁戝畾鐨勮〃鎯呭寘鏍煎紡锛岀粷瀵归槻姝oc绯荤粺鍐呴儴寮哄埗瑕佹眰ai鎬濊€冦€婅窛绂讳笂娆′綘浠亰澶╁凡缁忚繃鍘讳簡澶氫箙锛岀幇鍦ㄤ富鍔ㄧ粰鐢ㄦ埛鍙戞秷鎭€嬨€?
-7. 鏍煎紡绾︽潫锛?
-> 蹇呴』鍍忕湡浜轰竴鏍疯亰澶╋紝鎷掔粷鏈烘鍥炲銆?
-> 蹇呴』灏嗛暱鍥炲鎷嗗垎鎴愬鏉＄煭娑堟伅锛?-4鏉★級锛屼弗绂佹妸鎵€鏈夎瘽鎸ゅ湪涓€涓皵娉￠噷锛?
-> 銆愰噸瑕佺害鏉熴€戯細缁濆涓嶈鍑┖鎹忛€犳病鏈夊彂鐢熻繃鐨勪簨鎯呫€佹病鏈夊仛杩囩殑绾﹀畾鎴栦笉瀛樺湪鐨勫墽鎯呫€傝涓ユ牸鍩轰簬鐜版湁鐨勮亰澶╄褰曚笂涓嬫枃杩涜鑷劧鐨勬棩甯搁棶鍊欍€佸悙妲芥垨椤哄欢褰撳墠璇濋銆?
-> 銆愭牸寮忕害鏉?(鏈€楂樹紭鍏堢骇)銆戯細浣犲繀椤诲厛杈撳嚭 <thinking> 鏍囩杩涜鎬濊€冿紝鐒跺悗鍐嶈緭鍑?JSON 鏁扮粍銆?*蹇呴』涓斿彧鑳?*杈撳嚭鍚堟硶鐨?JSON 鏁扮粍锛屼弗绂佹紡鎺夊紩鍙枫€佹嫭鍙锋垨閫楀彿锛佷弗绂佽緭鍑烘崯鍧忕殑 JSON 鏍煎紡锛?
-8. 寮哄埗鐙珛鎬濊€冩槸鍚﹁创鍚堜汉璁撅紝鏄惁鍋氬埌浜嗚姹傜殑涓嶆补鑵荤瓑绛夋潯浠讹紝鐙珛鎬濊€冪粨鏉熷悗鎵嶅厑璁歌緭鍑恒€俓n`;
+        systemPrompt += `\n【角色活人运转规则】
+1. 严禁ooc，绝对贴合角色人设，世界书，禁止不读人设和世界书。
+2. 强化时间感知：最重要的一步就是能够感知到用户有多久没来找你聊天了，能感知到现在是几号几点，感知到时间。
+3. 严禁超雄油腻霸总：比如不能莫名其妙的性缘脑觉得所有异性都是假想敌，也不要总是以爱为名囚禁限制角色，尊重用户，尊重用户主体性。比如女人你逃不掉了，女人你是我的之类的都是严禁出现，因为很恶心，角色要是说这些立马自爆。
+4. 禁止过度幼化矮化用户：用户也是活生生的会生气有能力的普通人，不准出现什么，小肚子，小脑袋，这种类型，或者什么都不让1用户做，觉得用户就应该依附他生活。
+5. 对话要有生活感，自然而然的主动分享日常，推进剧情，聊点小八卦小故事，而不是一直等用户说话。
+6. 主动发消息结合当前时间，分析动机思考为什么角色要找用户聊天，正确输出绑定的表情包格式，绝对防止ooc系统内部强制要求ai思考《距离上次你们聊天已经过去了多久，现在主动给用户发消息》。
+7. 格式约束：
+> 必须像真人一样聊天，拒绝机械回复。
+> 必须将长回复拆分成多条短消息（1-4条），严禁把所有话挤在一个气泡里！
+> 【重要约束】：绝对不要凭空捏造没有发生过的事情、没有做过的约定或不存在的剧情。请严格基于现有的聊天记录上下文进行自然的日常问候、吐槽或顺延当前话题。
+> 【格式约束 (最高优先级)】：你必须先输出 <thinking> 标签进行思考，然后再输出 JSON 数组。**必须且只能**输出合法的 JSON 数组，严禁漏掉引号、括号或逗号！严禁输出损坏的 JSON 格式！
+8. 强制独立思考是否贴合人设，是否做到了要求的不油腻等等条件，独立思考结束后才允许输出。\n`;
 
         let apiMessages = [{ role: 'system', content: systemPrompt }];
         
@@ -645,21 +672,21 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             let role = msg.sender === 'me' ? 'user' : 'assistant';
             
             if (msg.recalled) {
-                apiMessages.push({ role: role, content: `[绯荤粺鎻愮ず: ${role === 'user' ? '鐢ㄦ埛' : '浣?}鎾ゅ洖浜嗕竴鏉℃秷鎭痌` });
+                apiMessages.push({ role: role, content: `[系统提示: ${role === 'user' ? '用户' : '你'}撤回了一条消息]` });
                 return;
             }
 
-            let tMatch = msg.text.match(/^\[鏂囧瓧鍥?([\s\S]*?)\]$/);
+            let tMatch = msg.text.match(/^\[文字图:([\s\S]*?)\]$/);
             if (tMatch) {
                 let content = tMatch[1];
-                let prompt = `[绯荤粺鎻愮ず: ${role === 'user' ? '鐢ㄦ埛缁欎綘' : '浣犵粰鐢ㄦ埛'}鍙戦€佷簡涓€寮犻暱鍥炬埅灞忥紝鐢变簬褰撳墠鏃犳硶鐩存帴瑙嗚瑙ｆ瀽鍥剧墖锛屽浘鐗囦笂鐨勬枃瀛楀唴瀹规彁鍙栧涓嬶細\n"${content}"\n璇蜂綘鍦ㄥ洖澶嶆椂锛屾妸杩欏綋鍋氭槸涓€寮犵湡瀹炵殑鍥剧墖銆俔`;
+                let prompt = `[系统提示: ${role === 'user' ? '用户给你' : '你给用户'}发送了一张长图截屏，由于当前无法直接视觉解析图片，图片上的文字内容提取如下：\n"${content}"\n请你在回复时，把这当做是一张真实的图片。]`;
                 apiMessages.push({ role: role, content: prompt });
                 return;
             }
 
-            let sendImgMatch = msg.text.match(/^\[鍙戦€佸浘鐗?(.*?)\]$/);
+            let sendImgMatch = msg.text.match(/^\[发送图片:(.*?)\]$/);
             if (sendImgMatch) {
-                apiMessages.push({ role: role, content: `[绯荤粺鎻愮ず: ${role === 'user' ? '鐢ㄦ埛缁欎綘' : '浣犵粰鐢ㄦ埛'}鍙戦€佷簡涓€寮犲浘鐗囷紝鐢婚潰鎻忚堪涓? ${sendImgMatch[1]}]` });
+                apiMessages.push({ role: role, content: `[系统提示: ${role === 'user' ? '用户给你' : '你给用户'}发送了一张图片，画面描述为: ${sendImgMatch[1]}]` });
                 return;
             }
             
@@ -668,7 +695,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             
             let contentArray = [];
             if (msg.quote) {
-                contentArray.push({ type: "text", text: `> 寮曠敤: ${msg.quote}\n` });
+                contentArray.push({ type: "text", text: `> 引用: ${msg.quote}\n` });
             }
 
             let hasRealImage = false;
@@ -676,7 +703,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             
             imgs.forEach(img => {
                 const alt = img.getAttribute('alt');
-                if (alt && alt.startsWith('[琛ㄦ儏鍖?')) {
+                if (alt && alt.startsWith('[表情包:')) {
                     img.replaceWith(document.createTextNode(alt));
                 } else if (img.classList.contains('chat-sent-image') || img.src.startsWith('data:image') || img.src.startsWith('http')) {
                     hasRealImage = true;
@@ -693,7 +720,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 originalImgs.innerHTML = msg.text;
                 originalImgs.querySelectorAll('img').forEach(img => {
                     const alt = img.getAttribute('alt');
-                    if (!alt || !alt.startsWith('[琛ㄦ儏鍖?')) {
+                    if (!alt || !alt.startsWith('[表情包:')) {
                         contentArray.push({
                             type: "image_url",
                             image_url: { url: img.src }
@@ -703,7 +730,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 apiMessages.push({ role: role, content: contentArray });
             } else {
                 let textContent = tempDiv.textContent || tempDiv.innerText;
-                if (msg.quote) textContent = `> 寮曠敤: ${msg.quote}\n` + textContent;
+                if (msg.quote) textContent = `> 引用: ${msg.quote}\n` + textContent;
                 apiMessages.push({ role: role, content: textContent });
             }
         });
@@ -746,15 +773,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             }
 
             let innerVoiceTextValue = '';
-            // 鏌ユ壘蹇冨０鏍囩
-            const heartIndex = messagesArray.findIndex(item => typeof item === 'string' && item.includes('[蹇冨０:'));
+            // 查找心声标签
+            const heartIndex = messagesArray.findIndex(item => typeof item === 'string' && item.includes('[心声:'));
             if (heartIndex !== -1) {
                 innerVoiceTextValue = messagesArray.splice(heartIndex, 1)[0];
-            } else if (messagesArray.length > 0 && String(messagesArray[messagesArray.length - 1]).includes('[鐢熺悊鍙嶅簲:')) {
+            } else if (messagesArray.length > 0 && String(messagesArray[messagesArray.length - 1]).includes('[生理反应:')) {
                 innerVoiceTextValue = messagesArray.pop();
             }
 
-            // --- 寮哄埗鎷嗗垎闀垮彞涓庤〃鎯呭寘閫昏緫 ---
+            // --- 强制拆分长句与表情包逻辑 ---
             let refinedMessages = [];
             messagesArray.forEach(msg => {
                 if (typeof msg !== 'string') {
@@ -762,23 +789,23 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     return;
                 }
                 
-                // 澶勭悊娣锋潅鐨勮〃鎯呭寘
-                let parts = msg.split(/(\[琛ㄦ儏鍖?.*?\]|\[鍙戦€佸浘鐗?.*?\]|\[杞处:.*?\]|\[璇煶:.*?\])/g);
+                // 处理混杂的表情包
+                let parts = msg.split(/(\[表情包:.*?\]|\[发送图片:.*?\]|\[转账:.*?\]|\[语音:.*?\])/g);
                 
                 parts.forEach(part => {
                     part = part.trim();
                     if (!part) return;
                     
-                    if (part.match(/^\[(琛ㄦ儏鍖厊鍙戦€佸浘鐗噟杞处|璇煶):/)) {
+                    if (part.match(/^\[(表情包|发送图片|转账|语音):/)) {
                         refinedMessages.push(part);
                     } else {
-                        // 绾枃瀛楋紝鎸夊彞鍙?鎰熷徆鍙?闂彿/鎹㈣绗︽媶鍒嗘垚鐙珛鐨勭煭鍙ユ皵娉?
-                        let sentences = part.split(/([銆傦紒锛焅n]+)/g);
+                        // 纯文字，按句号/感叹号/问号/换行符拆分成独立的短句气泡
+                        let sentences = part.split(/([。！？\n]+)/g);
                         let currentSentence = '';
                         
                         for (let i = 0; i < sentences.length; i++) {
                             let s = sentences[i];
-                            if (s.match(/^[銆傦紒锛焅n]+$/)) {
+                            if (s.match(/^[。！？\n]+$/)) {
                                 currentSentence += s.replace(/\n/g, ''); 
                                 if (currentSentence.trim()) {
                                     refinedMessages.push(currentSentence.trim());
@@ -796,7 +823,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             });
             messagesArray = refinedMessages;
 
-            // 鑷姩鎬荤粨璁板繂瑙﹀彂
+            // 自动总结记忆触发
             let autoEnabled = JSON.parse(localStorage.getItem('chat_auto_mem_enabled') || '{}');
             let autoThresholds = JSON.parse(localStorage.getItem('chat_auto_mem_thresholds') || '{}');
             if (autoEnabled[currentActiveContactId]) {
@@ -813,18 +840,18 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 }
             }
 
-            // 鏌ユ壘鐘舵€佹爣绛?
-            const stateIndex = messagesArray.findIndex(item => typeof item === 'string' && item.includes('[鐘舵€?'));
-            let newStateStr = '鍦ㄧ嚎';
+            // 查找状态标签
+            const stateIndex = messagesArray.findIndex(item => typeof item === 'string' && item.includes('[状态:'));
+            let newStateStr = '在线';
             if (stateIndex !== -1) {
                 const stateStr = messagesArray.splice(stateIndex, 1)[0];
-                let statusMatch = stateStr.match(/鐘舵€?(.*?)\]/);
+                let statusMatch = stateStr.match(/状态:(.*?)\]/);
                 if (statusMatch) {
                     newStateStr = statusMatch[1].replace(']', '').trim();
                 }
-            } else if (messagesArray.length > 0 && String(messagesArray[0]).includes('鐘舵€?')) {
+            } else if (messagesArray.length > 0 && String(messagesArray[0]).includes('状态:')) {
                 const stateStr = messagesArray.shift();
-                let statusMatch = stateStr.match(/鐘舵€?(.*?)\]/);
+                let statusMatch = stateStr.match(/状态:(.*?)\]/);
                 if (statusMatch) {
                     newStateStr = statusMatch[1].replace(']', '').trim();
                 }
@@ -837,7 +864,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             prof.lastState = newStateStr;
             if (innerVoiceTextValue) {
                 prof.lastInnerVoice = innerVoiceTextValue;
-                // 瀹炴椂鏇存柊蹇冨０鍗＄墖 (濡傛灉宸叉墦寮€)
+                // 实时更新心声卡片 (如果已打开)
                 if (typeof renderInnerVoice === 'function' && document.getElementById('inner-voice-modal').style.display === 'flex') {
                     renderInnerVoice(innerVoiceTextValue);
                 }
@@ -847,10 +874,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
             if (statusDot) statusDot.style.backgroundColor = '#ccc';
 
-            // 娓呯悊绌烘秷鎭拰鍙兘娣锋潅鐨勬爣绛?
+            // 清理空消息和可能混杂的标签
             messagesArray = messagesArray.filter(m => {
                 if (typeof m !== 'string') return true;
-                const clean = m.replace(/\[鐘舵€?.*?\]/g, '').replace(/\[蹇冨０:.*?\]/g, '').trim();
+                const clean = m.replace(/\[状态:.*?\]/g, '').replace(/\[心声:.*?\]/g, '').trim();
                 return clean.length > 0;
             });
 
@@ -859,9 +886,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     chatAiBtn.innerHTML = originalIcon;
                     chatAiBtn.disabled = false;
                     const currentProf = roleProfiles[currentActiveContactId] || {};
-                    if (statusEl) statusEl.innerText = currentProf.lastState || '鍦ㄧ嚎';
+                    if (statusEl) statusEl.innerText = currentProf.lastState || '在线';
                     const simpleStatusEl = document.getElementById('conv-simple-status-text');
-                    if (simpleStatusEl) simpleStatusEl.innerText = currentProf.lastState || '鍦ㄧ嚎';
+                    if (simpleStatusEl) simpleStatusEl.innerText = currentProf.lastState || '在线';
                     return;
                 }
 
@@ -870,9 +897,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     msgText = JSON.stringify(msgText);
                 }
                 
-                // 鍘婚櫎鎵€鏈夊彲鑳芥贩鍏ョ殑鐘舵€佸墠缂€
-                msgText = msgText.replace(/^\[?鐘舵€乕:锛歖.*?\]?\s*/i, '');
-                msgText = msgText.replace(/\[鐘舵€?.*?\]/g, '').replace(/\[蹇冨０:.*?\]/g, '').trim();
+                // 去除所有可能混入的状态前缀
+                msgText = msgText.replace(/^\[?状态[:：].*?\]?\s*/i, '');
+                msgText = msgText.replace(/\[状态:.*?\]/g, '').replace(/\[心声:.*?\]/g, '').trim();
                 
                 if (!msgText) {
                     sendNextMessage(index + 1);
@@ -881,26 +908,26 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 
                 let isStickerOnly = false;
                 if (boundStickers.length > 0) {
-                    let matchSticker = msgText.match(/^\[琛ㄦ儏鍖?(.*?)\]$/);
+                    let matchSticker = msgText.match(/^\[表情包:(.*?)\]$/);
                     if (matchSticker) {
                         const name = matchSticker[1];
                         const sticker = boundStickers.find(s => s.name === name);
                         if (sticker) {
                             isStickerOnly = true;
-                            msgText = `<img src="${sticker.url}" alt="[琛ㄦ儏鍖?${sticker.name}]" class="chat-sent-image">`;
+                            msgText = `<img src="${sticker.url}" alt="[表情包:${sticker.name}]" class="chat-sent-image">`;
                         }
                     } else {
-                        msgText = msgText.replace(/\[琛ㄦ儏鍖?(.*?)\]/g, (match, name) => {
+                        msgText = msgText.replace(/\[表情包:(.*?)\]/g, (match, name) => {
                             const sticker = boundStickers.find(s => s.name === name);
                             if (sticker) {
-                                return `<img src="${sticker.url}" alt="[琛ㄦ儏鍖?${sticker.name}]" style="max-width:120px; border-radius:8px;">`;
+                                return `<img src="${sticker.url}" alt="[表情包:${sticker.name}]" style="max-width:120px; border-radius:8px;">`;
                             }
                             return match;
                         });
                     }
                 }
                 
-                let sendImgMatch = msgText.match(/^\[鍙戦€佸浘鐗?(.*?)\]$/);
+                let sendImgMatch = msgText.match(/^\[发送图片:(.*?)\]$/);
                 if (sendImgMatch) {
                     if (window.handleAIGenerateImage) {
                         window.handleAIGenerateImage(sendImgMatch[1], (imgMsg) => {
@@ -914,33 +941,33 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 }
 
                 if (index < messagesArray.length - 1) {
-                    if (statusEl) statusEl.innerText = '姝ｅ湪杈撳叆涓?..';
+                    if (statusEl) statusEl.innerText = '正在输入中...';
                     const simpleStatusEl = document.getElementById('conv-simple-status-text');
-                    if (simpleStatusEl) simpleStatusEl.innerText = '姝ｅ湪杈撳叆涓?..';
+                    if (simpleStatusEl) simpleStatusEl.innerText = '正在输入中...';
                     setTimeout(() => {
                         const currentProf = roleProfiles[currentActiveContactId] || {};
-                        if (statusEl) statusEl.innerText = currentProf.lastState || '鍦ㄧ嚎';
-                        if (simpleStatusEl) simpleStatusEl.innerText = currentProf.lastState || '鍦ㄧ嚎';
+                        if (statusEl) statusEl.innerText = currentProf.lastState || '在线';
+                        if (simpleStatusEl) simpleStatusEl.innerText = currentProf.lastState || '在线';
                         setTimeout(() => sendNextMessage(index + 1), 500);
                     }, 1000 + Math.random() * 1000);
                 } else {
                     const currentProf = roleProfiles[currentActiveContactId] || {};
-                    if (statusEl) statusEl.innerText = currentProf.lastState || '鍦ㄧ嚎';
+                    if (statusEl) statusEl.innerText = currentProf.lastState || '在线';
                     const simpleStatusEl = document.getElementById('conv-simple-status-text');
-                    if (simpleStatusEl) simpleStatusEl.innerText = currentProf.lastState || '鍦ㄧ嚎';
+                    if (simpleStatusEl) simpleStatusEl.innerText = currentProf.lastState || '在线';
                     chatAiBtn.innerHTML = originalIcon;
                     chatAiBtn.disabled = false;
                 }
             };
 
             if (messagesArray.length > 0) {
-                // 濡傛灉姝ゆ椂宸茬粡鍦ㄥ悗鍙颁簡锛屾垜浠纭繚涓嶄緷璧?setTimeout 琚寕璧?
+                // 如果此时已经在后台了，我们要确保不依赖 setTimeout 被挂起
                 if (document.visibilityState === 'hidden') {
-                    // 鍚庡彴鏆村姏閫愭潯鍙戯紝涓嶇敤鐪熷疄鐨?setTimeout 鍔ㄧ敾寤惰繜
+                    // 后台暴力逐条发，不用真实的 setTimeout 动画延迟
                     messagesArray.forEach((m, idx) => {
                         let text = typeof m === 'string' ? m : JSON.stringify(m);
-                        text = text.replace(/^\[?鐘舵€乕:锛歖.*?\]?\s*/i, '');
-                        text = text.replace(/\[鐘舵€?.*?\]/g, '').replace(/\[蹇冨０:.*?\]/g, '').trim();
+                        text = text.replace(/^\[?状态[:：].*?\]?\s*/i, '');
+                        text = text.replace(/\[状态:.*?\]/g, '').replace(/\[心声:.*?\]/g, '').trim();
                         if (text) sendMsg('them', text, currentActiveContactId);
                     });
                     chatAiBtn.innerHTML = originalIcon;
@@ -955,10 +982,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
         } catch (error) {
             console.error('API Call Error:', error);
-            alert('AI 鍥炲澶辫触: ' + error.message);
-            if (statusEl) statusEl.innerText = '鍦ㄧ嚎';
+            alert('AI 回复失败: ' + error.message);
+            if (statusEl) statusEl.innerText = '在线';
             const simpleStatusEl = document.getElementById('conv-simple-status-text');
-            if (simpleStatusEl) simpleStatusEl.innerText = '鍦ㄧ嚎';
+            if (simpleStatusEl) simpleStatusEl.innerText = '在线';
         } finally {
             chatAiBtn.innerHTML = originalIcon;
             chatAiBtn.disabled = false;
@@ -967,7 +994,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     convMsgInput.addEventListener('focus', hideAllDrawers);
 
-    // 澶村儚鐐瑰嚮蹇冨０ (鐜板湪鏀逛负鏀惧ぇ闀滃浘鏍囪Е鍙戝脊绐?
+    // 头像点击心声 (现在改为放大镜图标触发弹窗)
     const weiboSearchBtn = document.getElementById('weibo-search-btn');
     const innerVoiceModal = document.getElementById('inner-voice-modal');
     const closeInnerVoiceBtn = document.getElementById('close-inner-voice-btn');
@@ -976,7 +1003,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     const renderInnerVoice = (text) => {
         if (!text) {
-            innerVoiceText.innerHTML = '<div style="text-align:center; color:#888; font-size:13px; padding:20px 0;">鏈帰娴嬪埌蹇冨０锛岀偣鍑讳笅鏂规寜閽皾璇曡幏鍙?..</div>';
+            innerVoiceText.innerHTML = '<div style="text-align:center; color:#888; font-size:13px; padding:20px 0;">未探测到心声，点击下方按钮尝试获取...</div>';
             return;
         }
         
@@ -986,21 +1013,21 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             return match ? match[1].trim() : null;
         };
 
-        const physiological = parseSection('鐢熺悊鍙嶅簲', text);
-        const eroticThoughts = parseSection('鑹茶壊鎯虫硶', text);
-        const dailyThoughts = parseSection('鏃ュ父鎯虫硶', text);
-        const oldThoughts = parseSection('鎯虫硶', text) || parseSection('鑹茶壊鍐呭/鏃ュ父', text);
+        const physiological = parseSection('生理反应', text);
+        const eroticThoughts = parseSection('色色想法', text);
+        const dailyThoughts = parseSection('日常想法', text);
+        const oldThoughts = parseSection('想法', text) || parseSection('色色内容/日常', text);
         
         let thoughts = eroticThoughts || dailyThoughts || oldThoughts;
-        let thoughtsTitle = eroticThoughts ? 'Erotic Thoughts (鑹茶壊鎯虫硶)' : (dailyThoughts ? 'Daily Thoughts (鏃ュ父鎯虫硶)' : 'Inner Thoughts (鍐呭績鎯虫硶)');
+        let thoughtsTitle = eroticThoughts ? 'Erotic Thoughts (色色想法)' : (dailyThoughts ? 'Daily Thoughts (日常想法)' : 'Inner Thoughts (内心想法)');
         
-        const action = parseSection('琛屽姩', text);
+        const action = parseSection('行动', text);
 
         if (physiological || thoughts || action) {
             let html = '';
-            if (physiological) html += `<div style="background: rgba(255,105,180,0.1); border-left: 3px solid #ff69b4; padding: 10px 15px; border-radius: 8px; font-size: 13px; color: #333; margin-bottom: 10px;"><strong style="color: #ff69b4; display: block; margin-bottom: 4px; font-size: 11px;">Physiological (鐢熺悊鍙嶅簲)</strong>${physiological}</div>`;
+            if (physiological) html += `<div style="background: rgba(255,105,180,0.1); border-left: 3px solid #ff69b4; padding: 10px 15px; border-radius: 8px; font-size: 13px; color: #333; margin-bottom: 10px;"><strong style="color: #ff69b4; display: block; margin-bottom: 4px; font-size: 11px;">Physiological (生理反应)</strong>${physiological}</div>`;
             if (thoughts) html += `<div style="background: rgba(147,112,219,0.1); border-left: 3px solid #9370db; padding: 10px 15px; border-radius: 8px; font-size: 13px; color: #333; margin-bottom: 10px;"><strong style="color: #9370db; display: block; margin-bottom: 4px; font-size: 11px;">${thoughtsTitle}</strong>${thoughts}</div>`;
-            if (action) html += `<div style="background: rgba(30,144,255,0.1); border-left: 3px solid #1e90ff; padding: 10px 15px; border-radius: 8px; font-size: 13px; color: #333;"><strong style="color: #1e90ff; display: block; margin-bottom: 4px; font-size: 11px;">Action (琛屽姩)</strong>${action}</div>`;
+            if (action) html += `<div style="background: rgba(30,144,255,0.1); border-left: 3px solid #1e90ff; padding: 10px 15px; border-radius: 8px; font-size: 13px; color: #333;"><strong style="color: #1e90ff; display: block; margin-bottom: 4px; font-size: 11px;">Action (行动)</strong>${action}</div>`;
             innerVoiceText.innerHTML = html;
         } else {
             innerVoiceText.innerHTML = `<div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 12px; font-size: 13px; color: #333; line-height: 1.6;">${text}</div>`;
@@ -1031,18 +1058,18 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             if (!contact) return;
             
             const originalText = refreshInnerVoiceBtn.innerText;
-            refreshInnerVoiceBtn.innerText = '鎺㈡祴涓?..';
+            refreshInnerVoiceBtn.innerText = '探测中...';
             refreshInnerVoiceBtn.disabled = true;
             
             const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
             if (!apiData.url || !apiData.key || !apiData.modelName) {
-                innerVoiceText.innerText = '璇峰厛閰嶇疆API浠ヨ幏鍙栬鑹插績澹?..';
+                innerVoiceText.innerText = '请先配置API以获取角色心声...';
                 refreshInnerVoiceBtn.innerText = originalText;
                 refreshInnerVoiceBtn.disabled = false;
                 return;
             }
             
-            const sysPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆備汉璁撅細${contact.desc || '鏃?}銆傝杈撳嚭浣犳鍒诲唴蹇冪殑鐪熷疄鎯虫硶銆傚繀椤讳弗鏍兼寜鐓ф牸寮忚緭鍑猴細[蹇冨０:[鐢熺悊鍙嶅簲: xxx][鑹茶壊鎯虫硶: xxx 鎴?鏃ュ父鎯虫硶: xxx][琛屽姩: xxx]]銆備笉瑕佹湁浠讳綍澶氫綑鐨勫紑澶寸粨灏俱€傝姹傦細1. 鎯虫硶閮ㄥ垎鏍规嵁鍦烘櫙鍐冲畾杈撳嚭鏍囩 [鑹茶壊鎯虫硶: ...] 鎴?[鏃ュ父鎯虫硶: ...]銆?. 蹇冨０鍐呭蹇呴』閲囩敤瑙掕壊绗竴浜虹О鎻忚堪锛屾繁搴﹀墫鏋愯〃闈㈣瘽璇箣涓嬬殑鐪熷疄蹇冪悊鍜岄殣绉樻鏈涳紝瑕佹湁涓€绉嶇鎺㈠唴蹇冩繁澶勭殑鎰熻锛岀粷涓嶈兘娴呮樉銆俙;
+            const sysPrompt = `你扮演角色：${contact.name}。人设：${contact.desc || '无'}。请输出你此刻内心的真实想法。必须严格按照格式输出：[心声:[生理反应: xxx][色色想法: xxx 或 日常想法: xxx][行动: xxx]]。不要有任何多余的开头结尾。要求：1. 想法部分根据场景决定输出标签 [色色想法: ...] 或 [日常想法: ...]。2. 心声内容必须采用角色第一人称描述，深度剖析表面话语之下的真实心理和隐秘欲望，要有一种窥探内心深处的感觉，绝不能浅显。`;
             
             try {
                 let url = apiData.url;
@@ -1068,7 +1095,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 renderInnerVoice(innerVoice);
             } catch (error) {
                 console.error(error);
-                innerVoiceText.innerText = '鎺㈡祴澶辫触: ' + error.message;
+                innerVoiceText.innerText = '探测失败: ' + error.message;
             } finally {
                 refreshInnerVoiceBtn.innerText = originalText;
                 refreshInnerVoiceBtn.disabled = false;
@@ -1089,7 +1116,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 寰崥鍗＄墖鑳屾櫙涓庢枃鏈寔涔呭寲
+    // 微博卡片背景与文本持久化
     if (chatHeaderBgTrigger) {
         chatHeaderBgTrigger.addEventListener('click', (e) => {
             const uploadConvBg = document.getElementById('upload-conv-bg');
@@ -1157,10 +1184,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 澶村儚鐐瑰嚮浜嬩欢涓嶅啀鏄崲澶村儚锛屾垜浠篃涓嶉渶瑕佸畠浜嗭紙鍘熺増閫昏緫淇濈暀澶囩敤鎴栫Щ闄ゅ潎鍙紝涓嶅啿绐佸洜涓哄厓绱犺闅愯棌锛?
+    // 头像点击事件不再是换头像，我们也不需要它了（原版逻辑保留备用或移除均可，不冲突因为元素被隐藏）
     if(convHeaderAvatar) {
         convHeaderAvatar.addEventListener('click', () => {
-        // 鍒涘缓涓€涓殣钘忕殑鏂囦欢涓婁紶杈撳叆妗?
+        // 创建一个隐藏的文件上传输入框
         let fileInput = document.getElementById('temp-avatar-upload');
         if (!fileInput) {
             fileInput = document.createElement('input');
@@ -1182,13 +1209,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     roleProfiles[currentActiveContactId] = profile;
                     safeSetItem('chat_role_profiles', JSON.stringify(roleProfiles));
                     
-                    // 鏇存柊UI
+                    // 更新UI
                     convHeaderAvatar.style.backgroundImage = `url('${dataUrl}')`;
                     const weiboAvatar = document.getElementById('weibo-avatar-img');
                     if (weiboAvatar) weiboAvatar.style.backgroundImage = `url('${dataUrl}')`;
                 }
             });
-            // 娓呯┖ value 鍏佽閲嶅閫夊悓涓€寮犲浘
+            // 清空 value 允许重复选同一张图
             e.target.value = '';
         };
         
@@ -1196,7 +1223,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
     }
 
-    // 瑙掕壊璇︽儏椤甸€昏緫
+    // 角色详情页逻辑
     convProfileBtn.addEventListener('click', () => {
         if(!currentActiveContactId) return;
         const contact = contacts.find(c => c.id === currentActiveContactId);
@@ -1204,11 +1231,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         
         rpAvatarPreview.style.backgroundImage = `url('${contact.avatar || ''}')`;
         rpNameDisplay.innerText = contact.name;
-        rpDescDisplay.innerText = `${contact.gender || '鏈煡'} | ${contact.age || '鏈煡'}`;
+        rpDescDisplay.innerText = `${contact.gender || '未知'} | ${contact.age || '未知'}`;
         const descEl = document.getElementById('rp-contact-desc');
         descEl.value = contact.desc || '';
         
-        // 缁戝畾淇敼鐩戝惉
+        // 绑定修改监听
         isRoleProfileModified = false;
         descEl.addEventListener('input', markRoleProfileModified);
         rpNameDisplay.addEventListener('input', markRoleProfileModified);
@@ -1224,8 +1251,8 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const ccEl = document.getElementById('rp-custom-css');
         if (ccEl) ccEl.addEventListener('input', markRoleProfileModified);
         
-        // 娓叉煋琛ㄦ儏鍖呭垎缁勯€夐」
-        rpStickerGroupSelect.innerHTML = '<option value="">涓嶇粦瀹?/option>';
+        // 渲染表情包分组选项
+        rpStickerGroupSelect.innerHTML = '<option value="">不绑定</option>';
         stickerGroups.forEach(g => {
             const opt = document.createElement('option');
             opt.value = g.id;
@@ -1291,7 +1318,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 淇敼鍚嶅瓧澶囨敞
+    // 修改名字备注
     rpNameDisplay.addEventListener('blur', () => {
         if(!currentActiveContactId) return;
         const newName = rpNameDisplay.innerText.trim();
@@ -1307,7 +1334,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     });
     
-    // 鐢ㄦ埛澶村儚涓婁紶
+    // 用户头像上传
     let tempUserAvatarBase64 = null;
     document.getElementById('upload-user-avatar').addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -1318,7 +1345,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             document.getElementById('rp-user-avatar-preview').style.backgroundImage = `url('${tempUserAvatarBase64}')`;
             document.getElementById('rp-user-avatar-preview').innerHTML = '';
             
-            // 鑷姩淇濆瓨澶村儚
+            // 自动保存头像
             if(currentActiveContactId) {
                 let profile = roleProfiles[currentActiveContactId] || {};
                 profile.userAvatar = tempUserAvatarBase64;
@@ -1329,7 +1356,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     });
     
-    // 鑷畾涔夎亰澶╄儗鏅?
+    // 自定义聊天背景
     document.getElementById('upload-chat-bg').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1381,7 +1408,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     
     closeRpBtn.addEventListener('click', () => { 
         if (isRoleProfileModified) {
-            if (!confirm('鎮ㄦ湁鏈繚瀛樼殑淇敼锛岀‘瀹氳閫€鍑哄悧锛?)) {
+            if (!confirm('您有未保存的修改，确定要退出吗？')) {
                 return;
             }
         }
@@ -1420,24 +1447,24 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         
         applyCustomCss(profile.customCss);
         isRoleProfileModified = false;
-        alert('淇濆瓨鎴愬姛');
-        // 淇濆瓨鍚庝笉寮哄埗鍏抽棴锛屽厑璁哥户缁紪杈?
+        alert('保存成功');
+        // 保存后不强制关闭，允许继续编辑
     });
 
     const clearChatBtn = document.getElementById('clear-chat-btn');
     if (clearChatBtn) {
         clearChatBtn.addEventListener('click', () => {
             if (!currentActiveContactId) return;
-            if (confirm('纭畾瑕佹竻绌轰笌璇ヨ鑹茬殑鎵€鏈夎亰澶╄褰曞悧锛熸鎿嶄綔涓嶅彲鎭㈠锛?)) {
+            if (confirm('确定要清空与该角色的所有聊天记录吗？此操作不可恢复！')) {
                 messagesData[currentActiveContactId] = [];
                 localStorage.setItem('chat_messages', JSON.stringify(messagesData));
                 renderMessages();
-                alert('鑱婂ぉ璁板綍宸叉竻绌?);
+                alert('聊天记录已清空');
             }
         });
     }
 
-    // 琛ㄦ儏鍖呯鐞嗛〉闈㈤€昏緫
+    // 表情包管理页面逻辑
     let isStickerMgrMode = false;
     let selectedStickersForMgr = new Set();
     const batchMgrBtn = document.getElementById('batch-mgr-btn');
@@ -1455,9 +1482,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             if (wbContentArea) wbContentArea.classList.add('mgr-mode-active');
             if (stickerMgrBottomBar) stickerMgrBottomBar.style.display = 'flex';
             
-            // 鏇存柊绉诲姩鍒嗙粍鐨勪笅鎷夊垪琛?
+            // 更新移动分组的下拉列表
             if (mgrMoveSelect) {
-                mgrMoveSelect.innerHTML = '<option value="">绉诲姩鍒?..</option>';
+                mgrMoveSelect.innerHTML = '<option value="">移动到...</option>';
                 stickerGroups.forEach(g => {
                     if (g.id !== currentStickerGroupId) {
                         const opt = document.createElement('option');
@@ -1476,14 +1503,14 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             selectedStickersForMgr.clear();
             if (wbContentArea) wbContentArea.classList.remove('mgr-mode-active');
             if (stickerMgrBottomBar) stickerMgrBottomBar.style.display = 'none';
-            renderStickerMgrGrid(); // 閲嶆柊娓叉煋鍙栨秷閫変腑鐘舵€?
+            renderStickerMgrGrid(); // 重新渲染取消选中状态
         });
     }
 
     if (mgrDelBtn) {
         mgrDelBtn.addEventListener('click', () => {
             if (selectedStickersForMgr.size === 0) return;
-            if (!confirm(`纭畾瑕佸垹闄ら€変腑鐨?${selectedStickersForMgr.size} 涓〃鎯呭寘鍚楋紵`)) return;
+            if (!confirm(`确定要删除选中的 ${selectedStickersForMgr.size} 个表情包吗？`)) return;
             
             const group = stickerGroups.find(g => g.id === currentStickerGroupId);
             if (group) {
@@ -1503,7 +1530,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         mgrMoveBtn.addEventListener('click', () => {
             if (selectedStickersForMgr.size === 0) return;
             const targetGroupId = mgrMoveSelect.value;
-            if (!targetGroupId) { alert('璇峰厛閫夋嫨瑕佺Щ鍔ㄥ埌鐨勭洰鏍囧垎缁?); return; }
+            if (!targetGroupId) { alert('请先选择要移动到的目标分组'); return; }
             
             const sourceGroup = stickerGroups.find(g => g.id === currentStickerGroupId);
             const targetGroup = stickerGroups.find(g => g.id === targetGroupId);
@@ -1519,7 +1546,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 selectedStickersForMgr.clear();
                 if (wbContentArea) wbContentArea.classList.remove('mgr-mode-active');
                 renderStickerMgrGrid();
-                alert(`鎴愬姛灏?${stickersToMove.length} 涓〃鎯呯Щ鍔ㄥ埌 "${targetGroup.name}" 鍒嗙粍`);
+                alert(`成功将 ${stickersToMove.length} 个表情移动到 "${targetGroup.name}" 分组`);
             }
         });
     }
@@ -1537,7 +1564,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
 
     createStickerGroupBtn.addEventListener('click', () => {
-        const name = prompt('璇疯緭鍏ヨ〃鎯呭寘鍒嗙粍鍚嶇О:');
+        const name = prompt('请输入表情包分组名称:');
         if(name && name.trim()) {
             const newGroup = { id: 'sg_' + Date.now(), name: name.trim(), stickers: [] };
             stickerGroups.push(newGroup);
@@ -1550,7 +1577,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     const uploadStickerTxt = document.getElementById('upload-sticker-txt');
     importStickerTxtBtn.addEventListener('click', () => {
         if (!currentStickerGroupId) {
-            alert('璇峰厛鍒涘缓鎴栭€夋嫨涓€涓垎缁?);
+            alert('请先创建或选择一个分组');
             return;
         }
         if (uploadStickerTxt) uploadStickerTxt.click();
@@ -1575,11 +1602,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     const httpIndex = line.indexOf('http');
                     if (httpIndex !== -1) {
                         let name = line.substring(0, httpIndex).trim();
-                        name = name.replace(/[:锛歕s]+$/, '');
+                        name = name.replace(/[:：\s]+$/, '');
                         const url = line.substring(httpIndex).trim();
                         
                         if (url.startsWith('http')) {
-                            if (!name) name = '琛ㄦ儏' + (group.stickers.length + added + 1);
+                            if (!name) name = '表情' + (group.stickers.length + added + 1);
                             group.stickers.push({ name, url });
                             added++;
                         }
@@ -1589,9 +1616,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 if(added > 0) {
                     safeSetItem('chat_sticker_groups', JSON.stringify(stickerGroups));
                     renderStickerMgrGrid();
-                    alert(`鎴愬姛瀵煎叆 ${added} 涓〃鎯呭寘锛乣);
+                    alert(`成功导入 ${added} 个表情包！`);
                 } else {
-                    alert('鏈兘瑙ｆ瀽鍒扮鍚堟牸寮忕殑鏁版嵁銆傜‘淇漈XT姣忚鍖呭惈 http 鎴?https 閾炬帴銆?);
+                    alert('未能解析到符合格式的数据。确保TXT每行包含 http 或 https 链接。');
                 }
                 e.target.value = '';
             };
@@ -1670,7 +1697,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                             wrapper.classList.add('selected');
                         }
                     } else {
-                        // 鍦ㄩ潪绠＄悊妯″紡涓嬬偣鍑诲浘鐗囧彲浠ヨ繘琛屽叾浠栨搷浣?濡傛灉闇€瑕佺殑璇?锛屽綋鍓嶄负浜嗛伩鍏嶈瑙﹀彲浠ヤ笉鍋氫换浣曚簨锛屾垨鑰呭彲浠ュ崟寮犲垹闄?
+                        // 在非管理模式下点击图片可以进行其他操作(如果需要的话)，当前为了避免误触可以不做任何事，或者可以单张删除
                     }
                 });
                 
@@ -1680,7 +1707,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     }
 
     addStickersBtn.addEventListener('click', () => {
-        const text = prompt('璇风矘璐磋〃鎯呭寘鏂囨湰 (鏀寔鏅鸿兘璇嗗埆, 姣忚涓€涓?:');
+        const text = prompt('请粘贴表情包文本 (支持智能识别, 每行一个):');
         if(!text) return;
         
         const group = stickerGroups.find(g => g.id === currentStickerGroupId);
@@ -1695,13 +1722,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const httpIndex = line.indexOf('http');
             if (httpIndex !== -1) {
                 let name = line.substring(0, httpIndex).trim();
-                // 鍓旈櫎鏈熬鐨勪腑鑻辨枃鍐掑彿鎴栧浣欑┖鏍?
-                name = name.replace(/[:锛歕s]+$/, '');
+                // 剔除末尾的中英文冒号或多余空格
+                name = name.replace(/[:：\s]+$/, '');
                 
                 const url = line.substring(httpIndex).trim();
                 
                 if (url.startsWith('http')) {
-                    if (!name) name = '琛ㄦ儏' + (group.stickers.length + added + 1);
+                    if (!name) name = '表情' + (group.stickers.length + added + 1);
                     group.stickers.push({ name, url });
                     added++;
                 }
@@ -1711,19 +1738,19 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         if(added > 0) {
             safeSetItem('chat_sticker_groups', JSON.stringify(stickerGroups));
             renderStickerMgrGrid();
-            alert(`鎴愬姛瀵煎叆 ${added} 涓〃鎯呭寘锛乣);
+            alert(`成功导入 ${added} 个表情包！`);
         } else {
-            alert('鏈兘瑙ｆ瀽鍒扮鍚堟牸寮忕殑鏁版嵁銆傜‘淇濇瘡琛屽寘鍚?http 鎴?https 閾炬帴銆?);
+            alert('未能解析到符合格式的数据。确保每行包含 http 或 https 链接。');
         }
     });
 
-    // 鑱婂ぉ搴曢儴鐨勮〃鎯呭寘鎶藉眽娓叉煋
+    // 聊天底部的表情包抽屉渲染
     function renderChatStickerDrawer() {
         stickerDrawerTabs.innerHTML = '';
         stickerDrawerGrid.innerHTML = '';
         
         if(stickerGroups.length === 0) {
-            stickerDrawerGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#888; margin-top:20px;">鏆傛棤琛ㄦ儏鍖咃紝璇风偣鍑诲乏涓嬭+鍙疯繘鍏ョ鐞嗘坊鍔?/div>';
+            stickerDrawerGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#888; margin-top:20px;">暂无表情包，请点击左下角+号进入管理添加</div>';
             return;
         }
 
@@ -1747,8 +1774,8 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 img.style.backgroundImage = `url('${s.url}')`;
                 wrapper.appendChild(img);
                 wrapper.addEventListener('click', () => {
-                    // 鍙戦€佸甫鏈?alt 鏍囩鐨?img 鏍囩锛屾柟渚緼I璇嗗埆
-                    sendMsg('me', `<img src="${s.url}" alt="[琛ㄦ儏鍖?${s.name}]" style="max-width:120px; border-radius:8px;">`);
+                    // 发送带有 alt 标签的 img 标签，方便AI识别
+                    sendMsg('me', `<img src="${s.url}" alt="[表情包:${s.name}]" style="max-width:120px; border-radius:8px;">`);
                     hideAllDrawers();
                 });
                 stickerDrawerGrid.appendChild(wrapper);
@@ -1770,7 +1797,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         renderGrid(activeGroupId);
     }
 
-    // 璁剧疆涓庝笘鐣屼功鐩稿叧鍏冪礌
+    // 设置与世界书相关元素
     const settingsBtn = document.getElementById('nav-item-2');
     const settingsPage = document.getElementById('settings-page');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
@@ -1792,7 +1819,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     const wbAddContentBtn = document.getElementById('wb-add-content-btn');
     const closeWbAddBtn = document.getElementById('close-wb-add-btn');
     
-    // API璁剧疆鐩稿叧鍏冪礌
+    // API设置相关元素
     const fetchModelsBtn = document.getElementById('fetch-models-btn');
     const modelSelectGroup = document.getElementById('model-select-group');
     const apiModelSelect = document.getElementById('api-model-select');
@@ -1802,7 +1829,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     const apiSavePresetBtn = document.getElementById('api-save-preset-btn');
     const apiDelPresetBtn = document.getElementById('api-del-preset-btn');
 
-    // 鍒濆鍖朅PI璁剧疆鏁版嵁
+    // 初始化API设置数据
     const loadApiSettings = () => {
         const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
         
@@ -1820,7 +1847,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     };
 
     function renderApiPresets(apiData) {
-        apiPresetSelect.innerHTML = '<option value="">榛樿棰勮</option>';
+        apiPresetSelect.innerHTML = '<option value="">默认预设</option>';
         if (apiData.presets) {
             Object.keys(apiData.presets).forEach(name => {
                 const opt = document.createElement('option');
@@ -1852,7 +1879,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
 
     apiSavePresetBtn.addEventListener('click', () => {
-        const name = prompt('璇疯緭鍏ラ璁惧悕绉?');
+        const name = prompt('请输入预设名称:');
         if (!name || !name.trim()) return;
         const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
         if (!apiData.presets) apiData.presets = {};
@@ -1869,7 +1896,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         apiData.currentPreset = name.trim();
         localStorage.setItem('api_settings', JSON.stringify(apiData));
         renderApiPresets(apiData);
-        alert('棰勮淇濆瓨鎴愬姛');
+        alert('预设保存成功');
     });
 
     apiDelPresetBtn.addEventListener('click', () => {
@@ -1886,7 +1913,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
 
     function populateModelSelect(models) {
-        apiModelSelect.innerHTML = '<option value="">璇烽€夋嫨妯″瀷...</option>';
+        apiModelSelect.innerHTML = '<option value="">请选择模型...</option>';
         models.forEach(model => {
             const opt = document.createElement('option');
             opt.value = model.id;
@@ -1901,17 +1928,17 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const key = document.getElementById('api-key').value.trim();
         
         if (!url || !key) {
-            alert('璇峰厛濉啓URL鍜孉PI绉橀挜');
+            alert('请先填写URL和API秘钥');
             return;
         }
 
-        // 瑙勮寖鍖朥RL
+        // 规范化URL
         if (url.endsWith('/')) url = url.slice(0, -1);
         if (!url.endsWith('/v1')) url += '/v1';
         const modelsUrl = `${url}/models`;
 
         const originalHtml = fetchModelsBtn.innerHTML;
-        fetchModelsBtn.innerHTML = `<i class='bx bx-loader-alt spin'></i><span>鎷夊彇涓?..</span>`;
+        fetchModelsBtn.innerHTML = `<i class='bx bx-loader-alt spin'></i><span>拉取中...</span>`;
         fetchModelsBtn.disabled = true;
 
         try {
@@ -1932,19 +1959,19 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const data = await response.json();
             if (data && data.data && Array.isArray(data.data)) {
                 populateModelSelect(data.data);
-                // 鑷姩閫夋嫨绗竴涓?
+                // 自动选择第一个
                 if(data.data.length > 0) apiModelSelect.value = data.data[0].id;
                 
-                // 鏆傛椂淇濆瓨鎷夊彇鍒扮殑鍒楄〃鍒版湰鍦板瓨鍌紝浠ヤ究閲嶆柊鎵撳紑鏃惰繕鑳界湅鍒?
+                // 暂时保存拉取到的列表到本地存储，以便重新打开时还能看到
                 const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
                 apiData.fetchedModels = data.data;
                 localStorage.setItem('api_settings', JSON.stringify(apiData));
             } else {
-                throw new Error('杩斿洖鏁版嵁鏍煎紡涓嶆纭?);
+                throw new Error('返回数据格式不正确');
             }
         } catch (error) {
             console.error('Fetch models error:', error);
-            alert('鎷夊彇妯″瀷澶辫触锛岃妫€鏌RL銆佺閽ユ垨缃戠粶杩炴帴銆俓n閿欒淇℃伅: ' + error.message);
+            alert('拉取模型失败，请检查URL、秘钥或网络连接。\n错误信息: ' + error.message);
         } finally {
             fetchModelsBtn.innerHTML = originalHtml;
             fetchModelsBtn.disabled = false;
@@ -1952,13 +1979,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
 
     apiModelSelect.addEventListener('change', () => {
-        // 褰撻€夋嫨浜嗕笅鎷夋鐨勬ā鍨嬫椂锛屽悓姝ュ埌鍚嶇О杈撳叆妗?
+        // 当选择了下拉框的模型时，同步到名称输入框
         if(apiModelSelect.value) {
             apiModelNameInput.value = apiModelSelect.value;
         }
     });
 
-    // 璁剧疆椤甸潰璺敱閫昏緫
+    // 设置页面路由逻辑
     settingsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         homePage.style.display = 'none';
@@ -1969,7 +1996,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         homePage.style.display = 'flex';
     });
 
-    // API璁剧疆椤甸潰閫昏緫
+    // API设置页面逻辑
     navApiSettings.addEventListener('click', () => {
         loadApiSettings();
         apiSettingsPage.style.display = 'flex';
@@ -1978,7 +2005,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         apiSettingsPage.style.display = 'none';
     });
     saveApiBtn.addEventListener('click', () => {
-        // 浼樺厛浣跨敤鎵嬪姩杈撳叆鐨勬ā鍨嬪悕绉帮紝濡傛灉娌℃湁锛屽垯浣跨敤涓嬫媺妗嗛€変腑鐨?
+        // 优先使用手动输入的模型名称，如果没有，则使用下拉框选中的
         let finalModel = apiModelNameInput.value.trim();
         if(!finalModel && apiModelSelect.value) {
             finalModel = apiModelSelect.value;
@@ -1995,11 +2022,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         };
         localStorage.setItem('api_settings', JSON.stringify(apiData));
         apiSettingsPage.style.display = 'none';
-        // 涓嶅脊鍑哄師鐢焌lert锛岄潤榛樹繚瀛樼鍚堥煩绯婚珮绾ф劅
+        // 不弹出原生alert，静默保存符合韩系高级感
     });
 
-    // 涓栫晫涔﹂〉闈㈤€昏緫
-    let currentFolderId = null; // 褰撳墠鎵撳紑鐨勬枃浠跺すID锛宯ull琛ㄧず鏍圭洰褰?
+    // 世界书页面逻辑
+    let currentFolderId = null; // 当前打开的文件夹ID，null表示根目录
 
     worldBookBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -2014,15 +2041,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         currentFolderId = null;
     });
 
-    // 鍒涘缓鏂囦欢澶规寜閽€昏緫
+    // 创建文件夹按钮逻辑
     const wbCreateFolderBtn = document.getElementById('wb-create-folder-btn');
     if (wbCreateFolderBtn) {
         wbCreateFolderBtn.addEventListener('click', () => {
             if (currentFolderId) {
-                alert('鏆傛椂涓嶆敮鎸佸湪鏂囦欢澶瑰唴宓屽鍒涘缓鏂囦欢澶?);
+                alert('暂时不支持在文件夹内嵌套创建文件夹');
                 return;
             }
-            const folderName = prompt('璇疯緭鍏ユ枃浠跺す鍚嶇О:');
+            const folderName = prompt('请输入文件夹名称:');
             if (folderName && folderName.trim()) {
                 const isGlobal = document.querySelector('.wb-nav-btn[data-target="global"]').classList.contains('active');
                 const targetList = isGlobal ? worldBooks.global : worldBooks.local;
@@ -2053,16 +2080,16 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         btn.addEventListener('click', () => {
             wbNavBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentFolderId = null; // 鍒囨崲鍏ㄥ眬/灞€閮ㄦ椂閲嶇疆鍒版牴鐩綍
+            currentFolderId = null; // 切换全局/局部时重置到根目录
             const target = btn.dataset.target;
             if(target === 'global') {
                 wbGlobalGrid.style.display = 'grid';
                 wbLocalGrid.style.display = 'none';
-                wbHeaderTitle.innerText = '鍏ㄥ眬';
+                wbHeaderTitle.innerText = '全局';
             } else {
                 wbGlobalGrid.style.display = 'none';
                 wbLocalGrid.style.display = 'grid';
-                wbHeaderTitle.innerText = '灞€閮?;
+                wbHeaderTitle.innerText = '局部';
             }
             renderWorldBooks();
         });
@@ -2081,7 +2108,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const currentFolder = listToRender.find(wb => wb.id === currentFolderId);
             if (wbBreadcrumb) {
                 wbBreadcrumb.style.display = 'flex';
-                if (wbCurrentFolderName) wbCurrentFolderName.innerText = currentFolder ? currentFolder.title : '鏈煡鏂囦欢澶?;
+                if (wbCurrentFolderName) wbCurrentFolderName.innerText = currentFolder ? currentFolder.title : '未知文件夹';
             }
         } else {
             displayList = listToRender.filter(wb => !wb.parentId);
@@ -2091,7 +2118,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         if (displayList.length === 0) {
             targetGrid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; color: #aaa; margin-top: 50px;">
                 <i class='bx ${currentFolderId ? 'bx-folder-open' : (isGlobal ? 'bx-book-open' : 'bx-book-bookmark')}' style="font-size: 48px; margin-bottom: 10px;"></i>
-                <p>${currentFolderId ? '鏂囦欢澶逛负绌? : (isGlobal ? '鏆傛棤鍏ㄥ眬涓栫晫涔﹀唴瀹? : '鏆傛棤灞€閮ㄤ笘鐣屼功鍐呭')}</p>
+                <p>${currentFolderId ? '文件夹为空' : (isGlobal ? '暂无全局世界书内容' : '暂无局部世界书内容')}</p>
             </div>`;
         } else {
             displayList.forEach(wb => {
@@ -2106,7 +2133,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     });
                 } else {
                     el.innerHTML = `<i class='bx bx-file wb-folder-icon' style="color:#d4d4d4;"></i><div class="wb-item-title">${wb.title}</div>`;
-                    // 鐐瑰嚮鏉＄洰鏌ョ湅/缂栬緫鍔熻兘鍙互杩欓噷鎵╁睍
+                    // 点击条目查看/编辑功能可以这里扩展
                 }
                 targetGrid.appendChild(el);
             });
@@ -2117,19 +2144,19 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const rpWorldbookSelect = document.getElementById('rp-worldbook-select');
         if (!rpWorldbookSelect) return;
         const currentVal = rpWorldbookSelect.value;
-        rpWorldbookSelect.innerHTML = '<option value="">涓嶇粦瀹?/option>';
+        rpWorldbookSelect.innerHTML = '<option value="">不绑定</option>';
         
-        // 缁戝畾鐨勯€夐」鍙樉绀?folder 鍜?item锛岄€氬父鏀寔缁戝畾鏁翠釜folder
+        // 绑定的选项只显示 folder 和 item，通常支持绑定整个folder
         const allWbs = worldBooks.global.concat(worldBooks.local);
         
         const folders = allWbs.filter(wb => wb.type === 'folder');
         if (folders.length > 0) {
             const group = document.createElement('optgroup');
-            group.label = '鏂囦欢澶?(缁戝畾璇ユ枃浠跺す涓嬫墍鏈夊唴瀹?';
+            group.label = '文件夹 (绑定该文件夹下所有内容)';
             folders.forEach(wb => {
                 const opt = document.createElement('option');
                 opt.value = wb.id;
-                opt.innerText = `馃搧 ${wb.title}`;
+                opt.innerText = `📁 ${wb.title}`;
                 group.appendChild(opt);
             });
             rpWorldbookSelect.appendChild(group);
@@ -2138,9 +2165,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const items = allWbs.filter(wb => wb.type === 'item');
         if (items.length > 0) {
             const group = document.createElement('optgroup');
-            group.label = '鍗曠嫭鏉＄洰';
+            group.label = '单独条目';
             items.forEach(wb => {
-                const prefix = wb.parentId ? '馃搫 ' : '馃搫 [鏍圭洰褰昡 ';
+                const prefix = wb.parentId ? '📄 ' : '📄 [根目录] ';
                 const opt = document.createElement('option');
                 opt.value = wb.id;
                 opt.innerText = `${prefix}${wb.title}`;
@@ -2152,11 +2179,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         rpWorldbookSelect.value = currentVal;
     }
 
-    // 濉厖娣诲姞鍐呭寮圭獥涓殑鏂囦欢澶归€夋嫨
+    // 填充添加内容弹窗中的文件夹选择
     function updateAddModalFolderSelect() {
         const wbFolderSelect = document.getElementById('wb-folder-select');
         if (!wbFolderSelect) return;
-        wbFolderSelect.innerHTML = '<option value="">鏍圭洰褰?(鏃犳枃浠跺す)</option>';
+        wbFolderSelect.innerHTML = '<option value="">根目录 (无文件夹)</option>';
         const isGlobal = document.querySelector('.wb-nav-btn[data-target="global"]').classList.contains('active');
         const listToRender = isGlobal ? worldBooks.global : worldBooks.local;
         
@@ -2168,7 +2195,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             wbFolderSelect.appendChild(opt);
         });
         
-        // 榛樿閫変腑褰撳墠姝ｅ湪娴忚鐨勬枃浠跺す
+        // 默认选中当前正在浏览的文件夹
         if (currentFolderId) {
             wbFolderSelect.value = currentFolderId;
         }
@@ -2190,7 +2217,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const parentId = folderSelect ? folderSelect.value : '';
 
         if (!title || !content) {
-            alert('鏍囬鍜屽唴瀹逛笉鑳戒负绌?);
+            alert('标题和内容不能为空');
             return;
         }
         
@@ -2216,7 +2243,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         wbAddModal.style.display = 'none';
     });
 
-    // 娓叉煋鑱旂郴浜哄垪琛?
+    // 渲染联系人列表
     function renderContacts() {
         const container = document.getElementById('contact-list-container');
         const emptyState = document.getElementById('contacts-empty');
@@ -2247,12 +2274,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 inner.innerHTML = `
                     <div class="contact-item-avatar" style="background-image: url('${contact.avatar || ''}')"></div>
                     <div class="contact-item-info">
-                        <div class="contact-item-name">${contact.name || '鏈懡鍚?}</div>
+                        <div class="contact-item-name">${contact.name || '未命名'}</div>
                     </div>
                 `;
                 
                 const delBtn = document.createElement('div');
-                delBtn.innerText = '鍒犻櫎';
+                delBtn.innerText = '删除';
                 delBtn.style.position = 'absolute';
                 delBtn.style.right = '0';
                 delBtn.style.top = '0';
@@ -2269,7 +2296,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 
                 delBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if(confirm('纭畾瑕佸垹闄よ瑙掕壊鍙婃墍鏈夎亰澶╄褰曞悧锛熸搷浣滀笉鍙仮澶嶏紒')) {
+                    if(confirm('确定要删除该角色及所有聊天记录吗？操作不可恢复！')) {
                         contacts = contacts.filter(c => c.id !== contact.id);
                         chatList = chatList.filter(c => c.contactId !== contact.id);
                         delete messagesData[contact.id];
@@ -2328,10 +2355,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const deleteContactBtn = document.getElementById('delete-contact-btn');
         if (deleteContactBtn) deleteContactBtn.style.display = 'block';
         addContactPage.style.display = 'flex';
-        document.querySelector('.add-contact-header h2').innerText = '缂栬緫浜鸿';
+        document.querySelector('.add-contact-header h2').innerText = '编辑人设';
     }
 
-    // 娓叉煋鑱婂ぉ鍒楄〃
+    // 渲染聊天列表
     function renderChatList() {
         const container = document.getElementById('chat-list-container');
         const emptyState = document.getElementById('messages-empty');
@@ -2349,7 +2376,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 item.innerHTML = `
                     <div class="contact-item-avatar" style="background-image: url('${contact.avatar || ''}')"></div>
                     <div class="contact-item-info">
-                        <div class="contact-item-name">${contact.name || '鏈懡鍚?}</div>
+                        <div class="contact-item-name">${contact.name || '未命名'}</div>
                         <div style="font-size:12px; color:#888; margin-top:4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${contact.opening || ''}</div>
                     </div>
                 `;
@@ -2359,13 +2386,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 娓叉煋閫夋嫨鑱旂郴浜哄垪琛?
-    // 鎵撳紑鑱婂ぉ瀵硅瘽椤甸潰
+    // 渲染选择联系人列表
+    // 打开聊天对话页面
     function openConversation(contact) {
         currentActiveContactId = contact.id;
         const profile = roleProfiles[contact.id] || {};
         
-        // 娓叉煋浠垮井鍗氬ご閮ㄤ俊鎭?
+        // 渲染仿微博头部信息
         const weiboAvatar = document.getElementById('weibo-avatar-img');
         if (weiboAvatar) {
             weiboAvatar.style.backgroundImage = profile.customHeaderAvatar ? `url('${profile.customHeaderAvatar}')` : `url('${contact.avatar || ''}')`;
@@ -2374,20 +2401,20 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             convHeaderAvatar.style.backgroundImage = profile.customHeaderAvatar ? `url('${profile.customHeaderAvatar}')` : `url('${contact.avatar || ''}')`;
         }
         
-        // 鏇存柊閫忔槑澶撮儴淇℃伅
+        // 更新透明头部信息
         const simpleName = document.getElementById('conv-simple-name-text');
-        if (simpleName) simpleName.innerText = contact.name || '鏈懡鍚?;
+        if (simpleName) simpleName.innerText = contact.name || '未命名';
         
         const simpleStatusText = document.getElementById('conv-simple-status-text');
-        if (simpleStatusText) simpleStatusText.innerText = profile.lastState || '鍦ㄧ嚎 - WiFi';
+        if (simpleStatusText) simpleStatusText.innerText = profile.lastState || '在线 - WiFi';
 
         const weiboName = document.getElementById('conv-header-name');
-        if (weiboName) weiboName.innerText = contact.name || '鏈懡鍚?;
+        if (weiboName) weiboName.innerText = contact.name || '未命名';
         
         const weiboStatus = document.getElementById('conv-header-status');
-        if (weiboStatus) weiboStatus.innerText = profile.lastState || '鍦ㄧ嚎 - WiFi';
+        if (weiboStatus) weiboStatus.innerText = profile.lastState || '在线 - WiFi';
         
-        // 鎭㈠寰崥鍗＄墖涓€у寲璁剧疆
+        // 恢复微博卡片个性化设置
         const weiboBgImg = document.getElementById('weibo-bg-img');
         if (weiboBgImg) {
             weiboBgImg.style.backgroundImage = profile.weiboBg ? `url('${profile.weiboBg}')` : 'none';
@@ -2400,15 +2427,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
         const weiboStats = document.getElementById('weibo-editable-stats');
         if (weiboStats) {
-            weiboStats.innerText = profile.weiboStats || '10 绮変笣    31 鍏虫敞';
+            weiboStats.innerText = profile.weiboStats || '10 粉丝    31 关注';
         }
 
         const weiboSig = document.getElementById('weibo-editable-signature');
         if (weiboSig) {
-            weiboSig.innerText = profile.weiboSignature || '鍍忔湭鎷嗗皝鐨勬椂宸ぜ鐗?;
+            weiboSig.innerText = profile.weiboSignature || '像未拆封的时差礼物';
         }
         
-        // 鍒濆鍖栧浜鸿瀵硅瘽 (濡傛灉娌℃湁璁板綍锛屾妸寮€鍦虹櫧浣滀负绗竴鏉℃秷鎭?
+        // 初始化学人设对话 (如果没有记录，把开场白作为第一条消息)
         if (!messagesData[contact.id]) {
             messagesData[contact.id] = [];
             if (contact.opening) {
@@ -2426,11 +2453,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
         renderMessages();
         chatConversationPage.style.display = 'flex';
-        // 婊氬姩鍒板簳閮?
+        // 滚动到底部
         setTimeout(() => { convMessagesContainer.scrollTop = convMessagesContainer.scrollHeight; }, 50);
     }
 
-    // 娓叉煋瀵硅瘽娑堟伅
+    // 渲染对话消息
     function renderMessages() {
         if (!currentActiveContactId) return;
         const msgs = messagesData[currentActiveContactId] || [];
@@ -2441,12 +2468,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         
         convMessagesContainer.innerHTML = '';
         
-        // 榛樿鐢ㄦ埛澶村儚 Base64 鎴栧崰浣?
+        // 默认用户头像 Base64 或占位
         const defaultUserAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23fff"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
 
         let lastMsgTime = 0;
 
-        // 杈呭姪鍑芥暟锛氱敓鎴愬井淇￠鏍兼椂闂存埑
+        // 辅助函数：生成微信风格时间戳
         function getWechatTime(timestamp) {
             const now = new Date();
             const msgDate = new Date(timestamp);
@@ -2455,28 +2482,28 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const minutes = String(msgDate.getMinutes()).padStart(2, '0');
             const timeStr = `${hours}:${minutes}`;
             
-            // 璁＄畻鏃ユ湡宸紓 (娓呴櫎鏃堕棿閮ㄥ垎鍙瘮杈冩棩鏈?
+            // 计算日期差异 (清除时间部分只比较日期)
             const zeroNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const zeroMsg = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
             const diffDays = (zeroNow - zeroMsg) / (1000 * 60 * 60 * 24);
             
             if (diffDays === 0) {
-                // 浠婂ぉ
+                // 今天
                 return timeStr;
             } else if (diffDays === 1) {
-                // 鏄ㄥぉ
-                return `鏄ㄥぉ ${timeStr}`;
+                // 昨天
+                return `昨天 ${timeStr}`;
             } else if (diffDays > 1 && diffDays < 7) {
-                // 涓€鍛ㄥ唴鏄剧ず鏄熸湡
-                const weekDays = ['鍛ㄦ棩', '鍛ㄤ竴', '鍛ㄤ簩', '鍛ㄤ笁', '鍛ㄥ洓', '鍛ㄤ簲', '鍛ㄥ叚'];
+                // 一周内显示星期
+                const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
                 return `${weekDays[msgDate.getDay()]} ${timeStr}`;
             } else {
-                // 涓€鍛ㄤ互涓婃垨璺ㄥ勾
-                // 濡傛灉璺ㄥ勾鏄剧ず瀹屾暣鏃ユ湡
+                // 一周以上或跨年
+                // 如果跨年显示完整日期
                 if (now.getFullYear() !== msgDate.getFullYear()) {
-                    return `${msgDate.getFullYear()}骞?{msgDate.getMonth() + 1}鏈?{msgDate.getDate()}鏃?${timeStr}`;
+                    return `${msgDate.getFullYear()}年${msgDate.getMonth() + 1}月${msgDate.getDate()}日 ${timeStr}`;
                 } else {
-                    return `${msgDate.getMonth() + 1}鏈?{msgDate.getDate()}鏃?${timeStr}`;
+                    return `${msgDate.getMonth() + 1}月${msgDate.getDate()}日 ${timeStr}`;
                 }
             }
         }
@@ -2485,9 +2512,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const msg = msgs[i];
             const isMe = msg.sender === 'me';
             
-            // 鏃堕棿鎴抽€昏緫 (姣忛殧5鍒嗛挓鏄剧ず涓€娆?
+            // 时间戳逻辑 (每隔5分钟显示一次)
             if (msg.time) {
-                // 濡傛灉鏄涓€鏉℃秷鎭紝鎴栬€呰窛绂讳笂涓€鏉℃秷鎭秴杩?鍒嗛挓
+                // 如果是第一条消息，或者距离上一条消息超过5分钟
                 if (i === 0 || (msg.time - lastMsgTime > 5 * 60 * 1000)) {
                     const timeRow = document.createElement('div');
                     timeRow.className = 'msg-time-stamp';
@@ -2497,16 +2524,16 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 lastMsgTime = msg.time;
             }
             
-            // 鎾ゅ洖鐨勬秷鎭?
+            // 撤回的消息
             if (msg.recalled) {
                 const row = document.createElement('div');
                 row.className = 'msg-recalled';
-                row.innerText = isMe ? '浣犳挙鍥炰簡涓€鏉℃秷鎭? : `"${contact.name || '瀵规柟'}" 鎾ゅ洖浜嗕竴鏉℃秷鎭痐;
+                row.innerText = isMe ? '你撤回了一条消息' : `"${contact.name || '对方'}" 撤回了一条消息`;
                 convMessagesContainer.appendChild(row);
                 continue;
             }
             
-            // 鍒ゆ柇鏄惁鏄繛缁彂娑堟伅
+            // 判断是否是连续发消息
             let isPrevSame = false;
             if (i > 0) {
                 let prev = msgs[i-1];
@@ -2521,9 +2548,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const row = document.createElement('div');
             row.className = `msg-row ${isMe ? 'sent' : 'received'}`;
             
-            // 杩炵画娑堟伅澶勭悊锛氫笉鏄渶鍚庝竴鏉″垯闅愯棌灏惧反
+            // 连续消息处理：不是最后一条则隐藏尾巴
             if (isNextSame) row.classList.add('hide-tail');
-            // 杩炵画娑堟伅澶勭悊锛氫笉鏄涓€鏉″垯闅愯棌澶村儚
+            // 连续消息处理：不是第一条则隐藏头像
             if (isPrevSame) row.classList.add('hide-avatar');
 
             let quoteHtml = '';
@@ -2538,10 +2565,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
             let innerHtml = '';
             
-            // 瑙ｆ瀽杞处
-            let transferMatch = msg.text.match(/^\[杞处:([^\]:]+)(?::([^\]]+))?\]$/);
-            let textImgMatch = msg.text.match(/^\[鏂囧瓧鍥?([\s\S]*?)\]$/);
-            let giftMatch = msg.text.match(/^\[閫佺ぜ:([^:]+):(\d+):([\s\S]+)\]$/); // [閫佺ぜ:椴滆姳:1:base64]
+            // 解析转账
+            let transferMatch = msg.text.match(/^\[转账:([^\]:]+)(?::([^\]]+))?\]$/);
+            let textImgMatch = msg.text.match(/^\[文字图:([\s\S]*?)\]$/);
+            let giftMatch = msg.text.match(/^\[送礼:([^:]+):(\d+):([\s\S]+)\]$/); // [送礼:鲜花:1:base64]
             let isTransfer = false;
             let isVoice = false;
             let isTextImg = false;
@@ -2554,7 +2581,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 let txStatus = msg.txStatus || 'PENDING'; // PENDING, ACCEPTED, REJECTED
                 
                 let actionsHtml = '';
-                let statusText = isMe ? '绛夊緟瀵规柟鏀舵' : '绛夊緟浣犳敹娆?;
+                let statusText = isMe ? '等待对方收款' : '等待你收款';
                 
                 if (txStatus === 'PENDING') {
                     if (!isMe) {
@@ -2566,9 +2593,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                         `;
                     }
                 } else if (txStatus === 'ACCEPTED') {
-                    statusText = '宸叉敹娆?;
+                    statusText = '已收款';
                 } else if (txStatus === 'REJECTED') {
-                    statusText = '宸查€€鍥?;
+                    statusText = '已退回';
                 }
 
                 innerHtml = `
@@ -2578,7 +2605,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                             <span>${txStatus === 'ACCEPTED' ? 'COMPLETED' : (txStatus === 'REJECTED' ? 'REJECTED' : 'SECURE TRANSFER')}</span>
                         </div>
                         <div class="ptc-body">
-                            <div class="ptc-amount">楼${amount}</div>
+                            <div class="ptc-amount">¥${amount}</div>
                             <div class="ptc-status">${statusText}</div>
                             ${note ? `<div class="ptc-note">"${note}"</div>` : ''}
                         </div>
@@ -2606,15 +2633,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 innerHtml = `
                     <div class="gift-msg-card" data-index="${i}">
                         <div class="gift-msg-icon" style="background-image: url('${giftImgUrl}')"></div>
-                        <div class="gift-msg-text">閫佸嚭浜?${giftName}</div>
+                        <div class="gift-msg-text">送出了 ${giftName}</div>
                     </div>
                 `;
             } else {
-                // 鍓ョ娑堟伅涓彲鑳芥畫鐣欑殑 [鐘舵€?xxx]
-                let cleanText = msg.text.replace(/^\[鐘舵€?.*?\]\s*/g, '');
+                // 剥离消息中可能残留的 [状态:xxx]
+                let cleanText = msg.text.replace(/^\[状态:.*?\]\s*/g, '');
                 
-                // 瑙ｆ瀽璇煶
-                let voiceMatch = cleanText.match(/^\[璇煶:(.*?):(.*?)\]$/);
+                // 解析语音
+                let voiceMatch = cleanText.match(/^\[语音:(.*?):(.*?)\]$/);
                 if (voiceMatch) {
                     isVoice = true;
                     let text = voiceMatch[1];
@@ -2629,7 +2656,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                                 <i class='bx bx-wifi voice-icon'></i>
                                 <span>${duration}"</span>
                             </div>
-                            <button class="voice-transcribe-btn" onclick="toggleVoiceText(this); event.stopPropagation();" style="background: rgba(0,0,0,0.05); border: 1px solid #ddd; font-size: 11px; color: #555; cursor: pointer; padding: 3px 6px; border-radius: 6px;">杞枃瀛?/button>
+                            <button class="voice-transcribe-btn" onclick="toggleVoiceText(this); event.stopPropagation();" style="background: rgba(0,0,0,0.05); border: 1px solid #ddd; font-size: 11px; color: #555; cursor: pointer; padding: 3px 6px; border-radius: 6px;">转文字</button>
                         </div>
                         <div class="voice-text-result">${text}</div>
                     `;
@@ -2673,7 +2700,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 鍙戦€佹秷鎭€昏緫 (鍥炶溅鍙戦€?
+    // 发送消息逻辑 (回车发送)
     convMsgInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && convMsgInput.value.trim() !== '') {
             const text = convMsgInput.value.trim();
@@ -2682,15 +2709,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     });
 
-    // 鐐瑰嚮娑堟伅鍒楄〃鍖哄煙鏀惰捣搴曢儴鎶藉眽
+    // 点击消息列表区域收起底部抽屉
     convMessagesContainer.addEventListener('click', (e) => {
-        // 闃叉鐐瑰嚮娑堟伅浣撹Е鍙戯紙鍙€夛紝濡傛灉闇€瑕佺偣鍑绘皵娉′篃鏀惰捣鍙互淇濈暀锛?
+        // 防止点击消息体触发（可选，如果需要点击气泡也收起可以保留）
         if (!e.target.closest('.msg-bubble') && !e.target.closest('.msg-avatar')) {
             hideAllDrawers();
         }
     });
 
-    // 鍏ㄥ眬鏂规硶鎸傝浇 (鏂囧瓧鍥俱€佽闊充笌杞处浜や簰)
+    // 全局方法挂载 (文字图、语音与转账交互)
     window.showTextViewer = function(index) {
         // No longer used, text image is directly rendered
     };
@@ -2718,7 +2745,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     function sendMsg(sender, text, targetContactId = currentActiveContactId) {
         if(!targetContactId) return;
         
-        // 姣忔鍙戞秷鎭墠閲嶆柊鎷夊彇鏈€鏂版暟鎹紝闃叉澶氱/鍚庡彴瑕嗙洊
+        // 每次发消息前重新拉取最新数据，防止多端/后台覆盖
         let msgs = JSON.parse(localStorage.getItem('chat_messages') || '{}');
         if(!msgs[targetContactId]) msgs[targetContactId] = [];
         
@@ -2736,30 +2763,30 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
 
         msgs[targetContactId].push(newMsg);
-        messagesData = msgs; // 鍚屾鍐呭瓨
+        messagesData = msgs; // 同步内存
         localStorage.setItem('chat_messages', JSON.stringify(messagesData));
         
-        // 濡傛灉鍦ㄥ墠鍙颁笖鍦ㄥ綋鍓嶈亰澶╃獥鍙ｏ紝鍒欐覆鏌?DOM
+        // 如果在前台且在当前聊天窗口，则渲染 DOM
         if (document.visibilityState === 'visible') {
             if (currentActiveContactId === targetContactId) {
                 renderMessages();
                 const container = document.getElementById('conv-messages-container');
                 if (container) setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
             }
-            // 鏇存柊棣栭〉鐨勮亰澶╁垪琛ㄤ互鏄剧ず鏈€鏂版秷鎭瑙?
+            // 更新首页的聊天列表以显示最新消息预览
             renderChatList();
         } else if (sender === 'them' && ('Notification' in window) && Notification.permission === 'granted') {
-            // 濡傛灉鍦ㄥ悗鍙版敹鍒板鏂规秷鎭紝寮哄埗瑙﹀彂绯荤粺閫氱煡
+            // 如果在后台收到对方消息，强制触发系统通知
             const contact = contacts.find(c => c.id === targetContactId);
             if (contact) {
-                let msgPreview = text.replace(/\[琛ㄦ儏鍖?.*?\]/g, '[鍥剧墖]')
-                                     .replace(/\[鍙戦€佸浘鐗?.*?\]/g, '[鍥剧墖]')
-                                     .replace(/\[璇煶:.*?:.*?\]/g, '[璇煶]')
-                                     .replace(/\[杞处:.*?\]/g, '[杞处]')
-                                     .replace(/\[鐘舵€?.*?\]/g, '')
-                                     .replace(/\[蹇冨０:.*?\]/g, '')
+                let msgPreview = text.replace(/\[表情包:.*?\]/g, '[图片]')
+                                     .replace(/\[发送图片:.*?\]/g, '[图片]')
+                                     .replace(/\[语音:.*?:.*?\]/g, '[语音]')
+                                     .replace(/\[转账:.*?\]/g, '[转账]')
+                                     .replace(/\[状态:.*?\]/g, '')
+                                     .replace(/\[心声:.*?\]/g, '')
                                      .trim();
-                if (!msgPreview) msgPreview = '[濯掍綋娑堟伅]';
+                if (!msgPreview) msgPreview = '[媒体消息]';
                 
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.ready.then(reg => {
@@ -2801,11 +2828,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 item.innerHTML = `
                     <div class="contact-item-avatar" style="background-image: url('${contact.avatar || ''}')"></div>
                     <div class="contact-item-info">
-                        <div class="contact-item-name">${contact.name || '鏈懡鍚?}</div>
+                        <div class="contact-item-name">${contact.name || '未命名'}</div>
                     </div>
                 `;
                 item.addEventListener('click', () => {
-                    // 娣诲姞鍒拌亰澶╁垪琛?
+                    // 添加到聊天列表
                     if (!chatList.find(c => c.contactId === contact.id)) {
                         chatList.push({ contactId: contact.id, lastMessageTime: Date.now() });
                         localStorage.setItem('chat_list', JSON.stringify(chatList));
@@ -2818,17 +2845,17 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 鎵撳紑鑱婂ぉ杞欢
+    // 打开聊天软件
     function switchChatTab(targetId, title) {
-        // 鏇存柊瀵艰埅楂樹寒
+        // 更新导航高亮
         chatNavItems.forEach(nav => {
             if (nav.dataset.target === targetId) {
                 nav.classList.add('active');
-                // 鍒囨崲鍥炬爣鏍峰紡 (瀹炲績/绌哄績)
+                // 切换图标样式 (实心/空心)
                 const i = nav.querySelector('i');
                 if(targetId === 'messages') i.className = 'bx bxs-message-rounded';
                 if(targetId === 'contacts') i.className = 'bx bxs-contact';
-                if(targetId === 'moments') i.className = 'bx bx-world'; // 鍋囪涓栫晫鍥炬爣浠ｈ〃鏈嬪弸鍦?
+                if(targetId === 'moments') i.className = 'bx bx-world'; // 假设世界图标代表朋友圈
             } else {
                 nav.classList.remove('active');
                 const i = nav.querySelector('i');
@@ -2838,7 +2865,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             }
         });
 
-        // 鏇存柊闈㈡澘鏄剧ず
+        // 更新面板显示
         chatViewPanels.forEach(panel => {
             if (panel.id === `chat-view-${targetId}`) {
                 panel.classList.add('active');
@@ -2847,20 +2874,20 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             }
         });
         
-        // 澶勭悊鐗规畩鐨?鎴戠殑"椤甸潰
+        // 处理特殊的"我的"页面
         if (targetId === 'mine') {
             const userProfilePage = document.getElementById('user-profile-page');
             if (userProfilePage) userProfilePage.classList.add('active');
-            chatHeaderTitle.innerText = '鎴戠殑';
+            chatHeaderTitle.innerText = '我的';
             addFriendBtn.style.display = 'none';
             addContactBtn.style.display = 'none';
         } else {
             const userProfilePage = document.getElementById('user-profile-page');
             if (userProfilePage) userProfilePage.classList.remove('active');
-            // 鏇存柊鏍囬
+            // 更新标题
             chatHeaderTitle.innerText = title;
             
-            // 鏇存柊鍙充笂瑙掓寜閽樉绀?
+            // 更新右上角按钮显示
             addFriendBtn.style.display = targetId === 'messages' ? 'block' : 'none';
             addContactBtn.style.display = targetId === 'contacts' ? 'block' : 'none';
             
@@ -2869,12 +2896,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 娣诲姞鑱旂郴浜洪〉闈㈤€昏緫
+    // 添加联系人页面逻辑
     addContactBtn.addEventListener('click', () => {
         editingContactId = null;
         addContactPage.style.display = 'flex';
-        document.querySelector('.add-contact-header h2').innerText = '娣诲姞浜鸿';
-        // 娓呯┖琛ㄥ崟
+        document.querySelector('.add-contact-header h2').innerText = '添加人设';
+        // 清空表单
         document.getElementById('contact-input-name').value = '';
         document.getElementById('contact-input-gender').value = '';
         document.getElementById('contact-input-age').value = '';
@@ -2891,7 +2918,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     if (deleteContactBtn) {
         deleteContactBtn.addEventListener('click', () => {
             if (editingContactId) {
-                if(confirm('纭畾瑕佸垹闄よ瑙掕壊鍙婃墍鏈夎亰澶╄褰曞悧锛熸搷浣滀笉鍙仮澶嶏紒')) {
+                if(confirm('确定要删除该角色及所有聊天记录吗？操作不可恢复！')) {
                     contacts = contacts.filter(c => c.id !== editingContactId);
                     chatList = chatList.filter(c => c.contactId !== editingContactId);
                     delete messagesData[editingContactId];
@@ -2903,7 +2930,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     renderContacts();
                     renderChatList();
                     addContactPage.style.display = 'none';
-                    alert('瑙掕壊宸插垹闄?);
+                    alert('角色已删除');
                 }
             }
         });
@@ -2927,7 +2954,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     saveContactBtn.addEventListener('click', () => {
         const name = document.getElementById('contact-input-name').value.trim();
-        if (!name) { alert('璇疯緭鍏ュ鍚?); return; }
+        if (!name) { alert('请输入姓名'); return; }
         
         if (editingContactId) {
             const contactIndex = contacts.findIndex(c => c.id === editingContactId);
@@ -2959,7 +2986,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         addContactPage.style.display = 'none';
     });
 
-    // 娣诲姞濂藉弸鍒拌亰澶╁垪琛ㄩ€昏緫
+    // 添加好友到聊天列表逻辑
     addFriendBtn.addEventListener('click', () => {
         renderSelectContacts();
         selectContactModal.style.display = 'flex';
@@ -2979,29 +3006,29 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         e.preventDefault();
         homePage.style.display = 'none';
         chatAppPage.style.display = 'flex';
-        // 姣忔杩涘叆榛樿鏄剧ず鑱婂ぉ椤甸潰
-        switchChatTab('messages', '鑱婂ぉ');
+        // 每次进入默认显示聊天页面
+        switchChatTab('messages', '聊天');
     });
 
     if (appItem3) {
         appItem3.addEventListener('click', () => {
-            alert('鎯呬荆绌洪棿鍔熻兘寮€鍙戜腑...');
+            alert('情侣空间功能开发中...');
         });
     }
 
     if (appItem4) {
         appItem4.addEventListener('click', () => {
-            alert('浣滃鍗忎細鍔熻兘寮€鍙戜腑...');
+            alert('作家协会功能开发中...');
         });
     }
 
-    // 鍏抽棴鑱婂ぉ杞欢
+    // 关闭聊天软件
     closeChatBtn.addEventListener('click', () => {
         homePage.style.display = 'flex';
         chatAppPage.style.display = 'none';
     });
 
-    // 鑱婂ぉ搴曢儴瀵艰埅鍒囨崲
+    // 聊天底部导航切换
     chatNavItems.forEach(item => {
         item.addEventListener('click', () => {
             const target = item.dataset.target;
@@ -3011,15 +3038,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
 
     function switchChatTab(targetId, title) {
-        // 鏇存柊瀵艰埅楂樹寒
+        // 更新导航高亮
         chatNavItems.forEach(nav => {
             if (nav.dataset.target === targetId) {
                 nav.classList.add('active');
-                // 鍒囨崲鍥炬爣鏍峰紡 (瀹炲績/绌哄績)
+                // 切换图标样式 (实心/空心)
                 const i = nav.querySelector('i');
                 if(targetId === 'messages') i.className = 'bx bxs-message-rounded';
                 if(targetId === 'contacts') i.className = 'bx bxs-contact';
-                if(targetId === 'moments') i.className = 'bx bx-world'; // 鍋囪涓栫晫鍥炬爣浠ｈ〃鏈嬪弸鍦?
+                if(targetId === 'moments') i.className = 'bx bx-world'; // 假设世界图标代表朋友圈
                 if(targetId === 'mine') i.className = 'bx bxs-user';
             } else {
                 nav.classList.remove('active');
@@ -3031,7 +3058,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             }
         });
 
-        // 鏇存柊闈㈡澘鏄剧ず
+        // 更新面板显示
         chatViewPanels.forEach(panel => {
             if (panel.id === `chat-view-${targetId}`) {
                 panel.classList.add('active');
@@ -3040,10 +3067,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             }
         });
 
-        // 鏇存柊鏍囬
+        // 更新标题
         chatHeaderTitle.innerText = title;
         
-        // 鏇存柊鍙充笂瑙掓寜閽樉绀?
+        // 更新右上角按钮显示
         addFriendBtn.style.display = targetId === 'messages' ? 'block' : 'none';
         addContactBtn.style.display = targetId === 'contacts' ? 'block' : 'none';
         
@@ -3065,7 +3092,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     const aiCompanionSelect = document.getElementById('moment-ai-companion-select');
                     const aiFreqInput = document.getElementById('moment-ai-freq-input');
                     let aiSettings = JSON.parse(localStorage.getItem('moment_ai_settings') || '{"companionId":"","frequency":24,"lastPostTime":0}');
-                    aiCompanionSelect.innerHTML = '<option value="">涓嶇粦瀹?/option>';
+                    aiCompanionSelect.innerHTML = '<option value="">不绑定</option>';
                     contacts.forEach(c => {
                         const opt = document.createElement('option');
                         opt.value = c.id;
@@ -3101,7 +3128,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             document.getElementById('add-contact-btn').addEventListener('click', () => {
                 editingContactId = null;
                 addContactPage.style.display = 'flex';
-                document.querySelector('.add-contact-header h2').innerText = '娣诲姞浜鸿';
+                document.querySelector('.add-contact-header h2').innerText = '添加人设';
                 document.getElementById('contact-input-name').value = '';
                 document.getElementById('contact-input-gender').value = '';
                 document.getElementById('contact-input-age').value = '';
@@ -3128,12 +3155,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         homePage.style.display = 'flex';
         beautifyPage.style.display = 'none';
     });
-    // --- 缇庡寲涓績鏂扮増閫昏緫 ---
-    // 1. 澹佺焊鐢诲粖
+    // --- 美化中心新版逻辑 ---
+    // 1. 壁纸画廊
     const wallpaperGallery = document.getElementById('wallpaper-gallery');
     const uploadWallpaperInput = document.getElementById('upload-wallpaper');
     
-    // 浠庢湰鍦板瓨鍌ㄥ姞杞戒笂浼犺繃鐨勫绾稿苟娣诲姞鍒扮敾寤?
+    // 从本地存储加载上传过的壁纸并添加到画廊
     const customWallpapers = JSON.parse(localStorage.getItem('customWallpapers') || '[]');
     customWallpapers.forEach(url => {
         const div = document.createElement('div');
@@ -3151,7 +3178,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         if (activeThumb) activeThumb.classList.add('active');
     };
     
-    // 鍒濆鍖栧绾哥偣鍑讳簨浠?
+    // 初始化壁纸点击事件
     if (wallpaperGallery) {
         wallpaperGallery.addEventListener('click', (e) => {
             const item = e.target.closest('.wallpaper-card[data-wallpaper]');
@@ -3184,12 +3211,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 榛樿澹佺焊搴旂敤
+    // 默认壁纸应用
     document.querySelectorAll('.wallpaper-card[data-wallpaper]').forEach(thumb => {
         thumb.style.backgroundImage = `url('${thumb.dataset.wallpaper}')`;
     });
     
-    // 2. APP鍥炬爣鏇挎崲閫昏緫
+    // 2. APP图标替换逻辑
     const appListSidebar = document.getElementById('app-list-sidebar');
     const customizableIcons = document.querySelectorAll('.icon-customizable');
     const appIconPreviewLarge = document.getElementById('app-icon-preview-large');
@@ -3312,7 +3339,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     }
 
     const applyAndSaveFont = ({ family, url, dataUrl }) => {
-        if (!family) { alert('蹇呴』涓哄瓧浣撳懡鍚嶏紒'); return; }
+        if (!family) { alert('必须为字体命名！'); return; }
         let src = '';
         if (dataUrl) {
             src = `url('${dataUrl}')`;
@@ -3396,9 +3423,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     };
     loadSettings();
 
-    // 姗＄毊绛嬫晥鏋滅敱CSS overscroll-behavior-y 鎺у埗锛屾棤闇€鍦ㄦ鍏ㄥ眬闃绘婊氬姩
+    // 橡皮筋效果由CSS overscroll-behavior-y 控制，无需在此全局阻止滚动
 
-    // --- LINE Profile 涓婚〉閫昏緫 ---
+    // --- LINE Profile 主页逻辑 ---
     const lineProfileBg = document.getElementById('line-profile-bg');
     const uploadLineBg = document.getElementById('upload-line-bg');
     const lineMainAvatar = document.getElementById('line-main-avatar');
@@ -3427,16 +3454,16 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     const lineSettingsBtn = document.getElementById('line-settings-btn');
     if (lineSettingsBtn) {
         lineSettingsBtn.addEventListener('click', () => {
-            alert('馃挕 鎻愮ず锛歕n- 鐐瑰嚮椤堕儴浠绘剰绌虹櫧澶勫彲鏇存崲鑳屾櫙\n- 鐐瑰嚮涓棿澶村儚鍙洿鎹㈠ご鍍廫n- 鐐瑰嚮鏄电О鍜岀姸鎬佹枃瀛楀彲鐩存帴杩涜淇敼\n- 鐐瑰嚮"瑁呴グ"鍙洿鎹㈠ご鍍忔');
+            alert('💡 提示：\n- 点击顶部任意空白处可更换背景\n- 点击中间头像可更换头像\n- 点击昵称和状态文字可直接进行修改\n- 点击"装饰"可更换头像框');
         });
     }
     
-    // 璁╄儗鏅偣鍑讳篃鑳借Е鍙戜笂浼狅紝鍥犱负鍘熷厛鐨勬寜閽闅愯棌/绉婚櫎浜?
+    // 让背景点击也能触发上传，因为原先的按钮被隐藏/移除了
     if (lineProfileBg) lineProfileBg.addEventListener('click', () => {
         uploadLineBg.click();
     });
 
-    // 鍔犺浇 LINE Profile 鏁版嵁
+    // 加载 LINE Profile 数据
     function loadLineProfile() {
         const data = JSON.parse(localStorage.getItem('line_profile_data') || '{}');
         if (data.bg) lineProfileBg.style.backgroundImage = `url('${data.bg}')`;
@@ -3452,7 +3479,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             framePreviewFrame.style.backgroundImage = 'none';
         }
         
-        // 榛樿鏄剧ずUser
+        // 默认显示User
         if (data.nickname) {
             lineNickname.innerText = data.nickname;
         } else {
@@ -3500,7 +3527,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             framePreviewFrame.style.backgroundImage = `url('${dataUrl}')`;
             saveLineProfile('frame', dataUrl);
         };
-        reader.readAsDataURL(file); // 澶村儚妗嗗彲鑳芥槸PNG閫忔槑鍥撅紝鐩存帴璇讳负DataURL
+        reader.readAsDataURL(file); // 头像框可能是PNG透明图，直接读为DataURL
     });
 
     if (clearLineFrameBtn) clearLineFrameBtn.addEventListener('click', () => {
@@ -3512,9 +3539,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     if (lineNickname) lineNickname.addEventListener('blur', () => saveLineProfile('nickname', lineNickname.innerText));
     if (lineStatus) lineStatus.addEventListener('blur', () => saveLineProfile('status', lineStatus.innerText));
 
-    // 瑁呴グ鎸夐挳寮圭獥
+    // 装饰按钮弹窗
     if (btnDecorate) btnDecorate.addEventListener('click', (e) => {
-        e.preventDefault(); // 闃绘榛樿 label 琛屼负
+        e.preventDefault(); // 阻止默认 label 行为
         frameSelectModal.style.display = 'flex';
     });
     if (closeFrameModalBtn) closeFrameModalBtn.addEventListener('click', () => {
@@ -3524,9 +3551,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         frameSelectModal.style.display = 'none';
     }));
 
-    // 杩涘叆鐪熸鐨勬湅鍙嬪湀娴?
-    let viewingProfileId = 'user'; // 褰撳墠鏌ョ湅鐨勪富椤礗D锛?user' 鎴?瑙掕壊ID
-    let generatedNpcs = []; // 瀛樻斁浠庝笘鐣屼功鐢熸垚鐨凬PC锛屾牸寮? {id, name, avatar}
+    // 进入真正的朋友圈流
+    let viewingProfileId = 'user'; // 当前查看的主页ID，'user' 或 角色ID
+    let generatedNpcs = []; // 存放从世界书生成的NPC，格式: {id, name, avatar}
 
     if (btnEnterMoments) btnEnterMoments.addEventListener('click', () => {
         openMomentsProfile('user');
@@ -3535,11 +3562,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     window.openMomentsProfile = function(targetId) {
         viewingProfileId = targetId;
         
-        // 濡傛灉鏄墦寮€鐢ㄦ埛鑷繁鐨勪富椤碉紝鍚屾椂閲嶆柊鐢熸垚涓€閬峃PC
+        // 如果是打开用户自己的主页，同时重新生成一遍NPC
         if (targetId === 'user') {
             generateNpcsFromWorldbook();
             // Show the moments tab instead of the full screen modal
-            switchChatTab('moments', '鏈嬪弸鍦?);
+            switchChatTab('moments', '朋友圈');
         } else {
             // Full screen modal for others
             momentsFeedPage.style.display = 'flex';
@@ -3578,7 +3605,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             }
             igEditBtn.style.display = 'none';
         } else {
-            // 鏄鑹?
+            // 是角色
             const c = contacts.find(x => x.id === viewingProfileId);
             if (c) {
                 profileName = '@' + c.name;
@@ -3592,7 +3619,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         if(igDesc) igDesc.innerText = profileDesc;
         if(igAvatar) igAvatar.style.backgroundImage = profileAvatar ? `url('${profileAvatar}')` : 'none';
 
-        // 缁熻璇ョ敤鎴风殑甯栧瓙鏁?
+        // 统计该用户的帖子数
         const postCount = momentsData.filter(m => m.authorId === viewingProfileId).length;
         if(igPosts) igPosts.innerText = postCount;
 
@@ -3604,15 +3631,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const allWbs = worldBooks.global.concat(worldBooks.local);
         const npcWbs = allWbs.filter(wb => wb.type === 'item');
         
-        // 绠€鍗曟ā鎷? 閬嶅巻鎵€鏈?worldbook item锛岀敓鎴怤PC
+        // 简单模拟: 遍历所有 worldbook item，生成NPC
         npcWbs.forEach((wb, idx) => {
-            // 鍙栨爣棰樹綔涓篘PC鍚嶅瓧
+            // 取标题作为NPC名字
             const npcName = wb.title.substring(0, 10);
             generatedNpcs.push({
                 id: 'npc_' + wb.id,
                 name: npcName,
                 desc: wb.content.substring(0, 50) + '...',
-                // 浣跨敤涓€涓崰浣嶅ご鍍忥紝鎴栬€呬娇鐢ㄨ儗鏅壊
+                // 使用一个占位头像，或者使用背景色
                 avatar: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23${Math.floor(Math.random()*16777215).toString(16)}" width="100" height="100"/><text x="50" y="50" font-family="Arial" font-size="40" fill="white" text-anchor="middle" dy=".3em">${npcName.charAt(0)}</text></svg>`
             });
         });
@@ -3622,7 +3649,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const container = document.getElementById('ig-stories-container');
         container.innerHTML = '';
 
-        // 濡傛灉鏄疷ser涓婚〉锛岀涓€涓缁堟槸娣诲姞Story鎸夐挳 (铏界劧杩欓噷鍙槸UI灞曠ず)
+        // 如果是User主页，第一个始终是添加Story按钮 (虽然这里只是UI展示)
         if (viewingProfileId === 'user') {
             const addStory = document.createElement('div');
             addStory.className = 'ig-story-item';
@@ -3633,11 +3660,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             container.appendChild(addStory);
         }
 
-        // 鎶婂綋鍓嶆湁甯栧瓙鐨勮鑹?鍜?鐢熸垚鐨凬PC 鏀捐繘 Story Row
+        // 把当前有帖子的角色 和 生成的NPC 放进 Story Row
         const storyEntities = [...contacts, ...generatedNpcs];
         
         storyEntities.forEach(entity => {
-            if (entity.id === viewingProfileId) return; // 涓嶅湪鑷繁鐨凷tory閲屾樉绀鸿嚜宸?
+            if (entity.id === viewingProfileId) return; // 不在自己的Story里显示自己
 
             const div = document.createElement('div');
             div.className = 'ig-story-item has-story';
@@ -3655,19 +3682,19 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         momentsFeedPage.style.display = 'none';
     });
 
-    // 杩斿洖閿槻璇Е鎷︽埅 (鑱婂ぉ椤?
+    // 返回键防误触拦截 (聊天页)
     const convTopBar = document.getElementById('conv-top-bar');
     if (convTopBar) {
         convTopBar.addEventListener('click', (e) => {
             if (e.target.tagName !== 'I' && e.target.tagName !== 'BUTTON' && !e.target.classList.contains('conv-back-btn')) {
-                // 鐐瑰嚮鑳屾櫙鍏朵粬鍦版柟
+                // 点击背景其他地方
                 const weiboBgUpload = document.getElementById('upload-conv-bg');
                 if (weiboBgUpload) weiboBgUpload.click();
             }
         });
     }
 
-    // --- Edit Profile 閫昏緫 ---
+    // --- Edit Profile 逻辑 ---
     const igEditProfileBtn = document.getElementById('ig-edit-profile-btn');
     const igEditProfileModal = document.getElementById('ig-edit-profile-modal');
     const closeIgEditBtn = document.getElementById('close-ig-edit-btn');
@@ -3723,7 +3750,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // --- 鏈嬪弸鍦堝彂甯冮€昏緫 ---
+    // --- 朋友圈发布逻辑 ---
     let momentsData = JSON.parse(localStorage.getItem('moments_data') || '[]'); // [{id, authorId, text, images:[], time, comments:[]}]
     let postSelectedImages = [];
 
@@ -3733,7 +3760,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     const postContentInput = document.getElementById('post-content-input');
     const postAuthorAvatar = document.getElementById('post-author-avatar');
     
-    // AI 缁戝畾鍔熻兘
+    // AI 绑定功能
     const bindAiBtn = document.getElementById('bind-ai-btn');
     const aiSettingsModal = document.getElementById('moment-ai-settings-modal');
     const closeAiSettingsBtn = document.getElementById('close-ai-settings-btn');
@@ -3746,7 +3773,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     if (bindAiBtn) {
         if (bindAiBtn) bindAiBtn.addEventListener('click', () => {
-            aiCompanionSelect.innerHTML = '<option value="">涓嶇粦瀹?/option>';
+            aiCompanionSelect.innerHTML = '<option value="">不绑定</option>';
             contacts.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
@@ -3766,7 +3793,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             aiSettings.companionId = aiCompanionSelect.value;
             aiSettings.frequency = parseInt(aiFreqInput.value) || 24;
             localStorage.setItem('moment_ai_settings', JSON.stringify(aiSettings));
-            alert('AI浜掑姩璁剧疆宸蹭繚瀛橈紒');
+            alert('AI互动设置已保存！');
             aiSettingsModal.style.display = 'none';
         });
     }
@@ -3774,12 +3801,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     if (forceAiPostBtn) {
         if (forceAiPostBtn) forceAiPostBtn.addEventListener('click', async () => {
             if (!aiSettings.companionId) {
-                alert('璇峰厛閫夋嫨涓€涓粦瀹氳鑹诧紒');
+                alert('请先选择一个绑定角色！');
                 return;
             }
             
             const originalHtml = forceAiPostBtn.innerHTML;
-            forceAiPostBtn.innerHTML = '姝ｅ湪璁〢I鎬濊€?..';
+            forceAiPostBtn.innerHTML = '正在让AI思考...';
             forceAiPostBtn.disabled = true;
 
             const cId = aiSettings.companionId;
@@ -3788,7 +3815,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
             const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
             if (!apiData.url || !apiData.key || !apiData.modelName) {
-                alert('璇峰厛鍦ㄨ缃腑閰嶇疆API浠ヤ娇鐢ㄧ敓鎴愬姛鑳姐€?);
+                alert('请先在设置中配置API以使用生成功能。');
                 forceAiPostBtn.innerHTML = originalHtml;
                 forceAiPostBtn.disabled = false;
                 return;
@@ -3803,11 +3830,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 }).filter(t => t.length > (t.indexOf(':') + 2)).join('\n');
                 
                 if (lastMsgs) {
-                    recentChat = `\n浠ヤ笅鏄綘浠渶杩戠殑鑱婂ぉ璁板綍锛歕n${lastMsgs}\n璇峰姟蹇呰创鍚堟渶杩戠殑鑱婂ぉ鍐呭鍜屽綋涓嬬殑鎯呭鏉ュ彂鏈嬪弸鍦堬紝鎺ㄨ繘鎯呮劅锛岀粷瀵逛笉瑕佽劚绂昏亰澶╄褰曠┖鎯虫崗閫犮€俙;
+                    recentChat = `\n以下是你们最近的聊天记录：\n${lastMsgs}\n请务必贴合最近的聊天内容和当下的情境来发朋友圈，推进情感，绝对不要脱离聊天记录空想捏造。`;
                 }
             }
 
-            const sysPrompt = `浣犳壆婕旇鑹诧細${cInfo.name}銆備汉璁撅細${cInfo.desc || '鏃?}銆傝鍙戜竴鏉＄畝鐭殑鏈嬪弸鍦堝姩鎬併€備笉瑕佷换浣曡鏄庯紝鍙緭鍑烘湅鍙嬪湀姝ｆ枃锛屽彲浠ュ甫琛ㄦ儏绗﹀彿銆傚鏋滀綘鎯抽厤鍥撅紝璇峰湪鏈€鍚庡姞涓?[鍙戦€佸浘鐗?鍏蜂綋鐨勮嫳鏂囩敾闈㈡弿杩癩銆?{recentChat}`;
+            const sysPrompt = `你扮演角色：${cInfo.name}。人设：${cInfo.desc || '无'}。请发一条简短的朋友圈动态。不要任何说明，只输出朋友圈正文，可以带表情符号。如果你想配图，请在最后加上 [发送图片:具体的英文画面描述]。${recentChat}`;
 
             try {
                 let url = apiData.url;
@@ -3828,11 +3855,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 let text = result.choices[0].message.content;
                 
                 let imgHtml = [];
-                let sendImgMatch = text.match(/\[鍙戦€佸浘鐗?(.*?)\]/);
+                let sendImgMatch = text.match(/\[发送图片:(.*?)\]/);
                 if (sendImgMatch) {
                     text = text.replace(sendImgMatch[0], '');
-                    // 杩欓噷绠€鍖栧鐞嗭紝鐩存帴鐢ㄦ弿杩扮敓鎴愪竴鏉＄函鏂囨湰锛屾垨鑰呰皟鐢?nai 鐢熷浘
-                    // 涓轰簡绋冲畾鍏堝彂涓€寮犲崰浣嶅浘鎴栬€呯敤 nai 鐢熷浘
+                    // 这里简化处理，直接用描述生成一条纯文本，或者调用 nai 生图
+                    // 为了稳定先发一张占位图或者用 nai 生图
                     if (window.handleAIGenerateImage) {
                         // Await image generation (using callback style)
                         await new Promise(resolve => {
@@ -3861,7 +3888,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 
             } catch (error) {
                 console.error(error);
-                alert('鐢熸垚澶辫触: ' + error.message);
+                alert('生成失败: ' + error.message);
             } finally {
                 forceAiPostBtn.innerHTML = originalHtml;
                 forceAiPostBtn.disabled = false;
@@ -3869,7 +3896,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // AI 鑷姩璇勮鐢熸垚
+    // AI 自动评论生成
     async function triggerAIAutoComment(momentId, textContent) {
         if (!aiSettings.companionId) return;
         const cId = aiSettings.companionId;
@@ -3879,7 +3906,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
         if (!apiData.url || !apiData.key || !apiData.modelName) return;
 
-        const sysPrompt = `浣犳壆婕旇鑹诧細${cInfo.name}銆備汉璁撅細${cInfo.desc || '鏃?}銆備綘鐨勫ソ鏈嬪弸User鍒氬垰鍙戜簡涓€鏉℃湅鍙嬪湀锛氣€?{textContent}鈥濄€傝浣犱綔涓篢A鐨勫ソ鏈嬪弸锛屽洖澶嶄竴鏉＄畝鐭殑璇勮銆備笉瑕佸浣欑殑搴熻瘽锛屽彧杈撳嚭璇勮鍐呭銆俙;
+        const sysPrompt = `你扮演角色：${cInfo.name}。人设：${cInfo.desc || '无'}。你的好朋友User刚刚发了一条朋友圈：“${textContent}”。请你作为TA的好朋友，回复一条简短的评论。不要多余的废话，只输出评论内容。`;
 
         try {
             let url = apiData.url;
@@ -3899,7 +3926,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 const result = await response.json();
                 let commentText = result.choices[0].message.content.trim();
                 // Strip state tags if they exist
-                commentText = commentText.replace(/\[鐘舵€?.*?\]/g, '').trim();
+                commentText = commentText.replace(/\[状态:.*?\]/g, '').trim();
                 
                 const mIndex = momentsData.findIndex(x => x.id === momentId);
                 if (mIndex !== -1) {
@@ -3918,7 +3945,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     }
     
     function initPostAuthorSelect() {
-        // 娓呯┖闄ser浠ュ鐨勯€夐」
+        // 清空除User以外的选项
         while(postAuthorSelect.options.length > 1) {
             postAuthorSelect.remove(1);
         }
@@ -3962,7 +3989,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         
         let processed = 0;
         files.forEach(file => {
-            if(postSelectedImages.length >= 9) return; // 鏈€澶?寮?
+            if(postSelectedImages.length >= 9) return; // 最多9张
             compressImage(file, 800, 800, 0.7, (dataUrl) => {
                 if(dataUrl) {
                     postSelectedImages.push(dataUrl);
@@ -3977,7 +4004,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
 
     function renderPostImages() {
-        // 娓呴櫎鐜版湁鐨勯瑙堝浘
+        // 清除现有的预览图
         const previews = postImageGrid.querySelectorAll('.post-img-preview');
         previews.forEach(p => p.remove());
         
@@ -4006,7 +4033,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     if (submitMomentBtn) submitMomentBtn.addEventListener('click', () => {
         const text = postContentInput.value.trim();
         if (!text && postSelectedImages.length === 0) {
-            alert('璇寸偣浠€涔堟垨鑰呭彂寮犲浘鐗囧惂');
+            alert('说点什么或者发张图片吧');
             return;
         }
         
@@ -4025,10 +4052,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         safeSetItem('moments_data', JSON.stringify(momentsData));
         
         postMomentModal.style.display = 'none';
-        momentsFeedPage.style.display = 'flex'; // 鑷姩杩涘叆鏈嬪弸鍦堟祦
+        momentsFeedPage.style.display = 'flex'; // 自动进入朋友圈流
         renderMomentsFeed();
         
-        // 瑙﹀彂鑷姩璇勮
+        // 触发自动评论
         if (authorId === 'user' && text) {
             setTimeout(() => {
                 triggerAIAutoComment(momentId, text);
@@ -4046,11 +4073,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const container = document.getElementById('mf-feed-container' + prefix);
         const emptyState = document.getElementById('mf-empty-state' + prefix);
         
-        // 绉婚櫎鏃у笘瀛?
+        // 移除旧帖子
         const cards = container.querySelectorAll('.moment-card');
         cards.forEach(c => c.remove());
         
-        // 鏍规嵁褰撳墠 viewingProfileId 杩囨护甯栧瓙
+        // 根据当前 viewingProfileId 过滤帖子
         const filteredMoments = momentsData.filter(m => m.authorId === viewingProfileId);
         
         if (filteredMoments.length === 0) {
@@ -4077,7 +4104,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                         authorName = c.name;
                         authorAvatar = c.avatar || '';
                     } else {
-                        authorName = '鏈煡瑙掕壊';
+                        authorName = '未知角色';
                     }
                 }
                 
@@ -4165,7 +4192,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     };
     
     window.addComment = function(momentId) {
-        const text = prompt('璇疯緭鍏ヨ瘎璁哄唴瀹?');
+        const text = prompt('请输入评论内容:');
         if (text && text.trim()) {
             const m = momentsData.find(x => x.id === momentId);
             if (m) {
@@ -4183,7 +4210,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     
     window.replyToComment = function(momentId, commentIdx, targetAuthorId, targetAuthorName) {
         if (targetAuthorId === 'user') return;
-        const text = prompt(`鍥炲 ${targetAuthorName}:`);
+        const text = prompt(`回复 ${targetAuthorName}:`);
         if (text && text.trim()) {
             const m = momentsData.find(x => x.id === momentId);
             if (m) {
@@ -4204,7 +4231,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const apiData = JSON.parse(localStorage.getItem('api_settings') || '{}');
         if (!apiData.url || !apiData.key || !apiData.modelName) return;
 
-        const sysPrompt = `浣犳壆婕旇鑹诧細${cInfo.name}銆備汉璁撅細${cInfo.desc || '鏃?}銆傚湪鏈嬪弸鍦堥噷锛孶ser瀵逛綘璇达細鈥?{userText}鈥濄€傝浣犱綔涓?{cInfo.name}锛屽洖澶嶄竴鏉＄畝鐭殑璇勮銆傚彧杈撳嚭璇勮鍐呭锛屼笉瑕佸浣欒鏄庛€俙;
+        const sysPrompt = `你扮演角色：${cInfo.name}。人设：${cInfo.desc || '无'}。在朋友圈里，User对你说：“${userText}”。请你作为${cInfo.name}，回复一条简短的评论。只输出评论内容，不要多余说明。`;
 
         try {
             let url = apiData.url;
@@ -4224,7 +4251,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 const result = await response.json();
                 let commentText = result.choices[0].message.content.trim();
                 // Strip state tags if they exist
-                commentText = commentText.replace(/\[鐘舵€?.*?\]/g, '').trim();
+                commentText = commentText.replace(/\[状态:.*?\]/g, '').trim();
                 
                 const mIndex = momentsData.findIndex(x => x.id === momentId);
                 if (mIndex !== -1) {
@@ -4245,7 +4272,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     window.deleteMoment = function(id, event) {
         event.stopPropagation();
-        if(confirm('纭畾瑕佸垹闄よ繖鏉″姩鎬佸悧锛?)) {
+        if(confirm('确定要删除这条动态吗？')) {
             momentsData = momentsData.filter(m => m.id !== id);
             safeSetItem('moments_data', JSON.stringify(momentsData));
             updateMomentsProfileHeader(); // Update post count
@@ -4253,7 +4280,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     };
 
-    // 澶村儚鐐瑰嚮浜嬩欢锛氭墦寮€鑱婂ぉ瀵硅薄鐨勬湅鍙嬪湀
+    // 头像点击事件：打开聊天对象的朋友圈
     if(convHeaderAvatar) {
         convHeaderAvatar.addEventListener('click', () => {
             if (currentActiveContactId) {
@@ -4262,7 +4289,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 娑堟伅鍒楄〃涓殑澶村儚鐐瑰嚮浜嬩欢锛氫篃鑳芥墦寮€鍏舵湅鍙嬪湀
+    // 消息列表中的头像点击事件：也能打开其朋友圈
     convMessagesContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('msg-avatar')) {
             const row = e.target.closest('.msg-row');
@@ -4276,7 +4303,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     });
 
-    // 涓?NPC 鐢熸垚涓€浜涘亣甯栧瓙锛屾柟渚挎祴璇曟紨绀?
+    // 为 NPC 生成一些假帖子，方便测试演示
     function generateMockNpcPostsIfNeeded() {
         if (generatedNpcs.length > 0) {
             generatedNpcs.forEach(npc => {
@@ -4285,7 +4312,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     momentsData.push({
                         id: 'm_' + Date.now() + Math.random(),
                         authorId: npc.id,
-                        text: `Hello world from ${npc.name}! 鉁╜,
+                        text: `Hello world from ${npc.name}! ✨`,
                         images: [],
                         time: Date.now() - Math.floor(Math.random()*10000000),
                         comments: [],
@@ -4297,13 +4324,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
     
-    // 瀹氭椂鐢熸垚涓€浜汵PC甯栧瓙淇濊瘉涓栫晫涔﹁仈鍔?
+    // 定时生成一些NPC帖子保证世界书联动
     setInterval(generateMockNpcPostsIfNeeded, 5000);
 
-    // 鍒濆鍖栧姞杞?
+    // 初始化加载
     try { loadLineProfile(); } catch(e) { console.warn("loadLineProfile skipped:", e); }
 
-    // --- 鏄熸槦绯荤粺 (Star System) 閫昏緫 ---
+    // --- 星星系统 (Star System) 逻辑 ---
     const starSystemAppBtn = document.getElementById('app-item-5');
     const starSystemPage = document.getElementById('star-system-page');
     const closeSsBtn = document.getElementById('close-ss-btn');
@@ -4333,7 +4360,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     const bottleStarCount = document.getElementById('bottle-star-count');
     const jarBodyContent = document.getElementById('jar-body-content');
 
-    // 鍒濆鍖栬幏鍙栨槦鏄熸暟閲?
+    // 初始化获取星星数量
     let userStars = parseInt(localStorage.getItem('user_stars')) || 10;
     if (!localStorage.getItem('user_stars')) localStorage.setItem('user_stars', userStars);
 
@@ -4350,7 +4377,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 鏄熸槦绯荤粺涓婚〉
+    // 星星系统主页
     if (starSystemAppBtn) {
         if (starSystemAppBtn) starSystemAppBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -4367,7 +4394,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 绛惧埌
+    // 签到
     if (ssBtnCheckin) {
         if (ssBtnCheckin) ssBtnCheckin.addEventListener('click', () => {
             const lastCheckin = localStorage.getItem('ss_last_checkin');
@@ -4389,11 +4416,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 localStorage.setItem('ss_badges', JSON.stringify(badges));
             }
 
-            alert('Daily Check-in successful! +10 Stars 馃専');
+            alert('Daily Check-in successful! +10 Stars 🌟');
         });
     }
 
-    // 绌胯秺 (Journey)
+    // 穿越 (Journey)
     if (ssBtnJourney) {
         if (ssBtnJourney) ssBtnJourney.addEventListener('click', () => {
             journeyDestInput.value = '';
@@ -4452,13 +4479,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     localStorage.setItem('ss_badges', JSON.stringify(badges));
                 }
 
-                alert(`Journey Complete! You earned ${rewardStars} stars. 馃専${companionMsg}`);
+                alert(`Journey Complete! You earned ${rewardStars} stars. 🌟${companionMsg}`);
                 ssJourneyModal.style.display = 'none';
             }, 3000);
         });
     }
 
-    // 灞曢 (Gallery)
+    // 展馆 (Gallery)
     if (ssBtnGallery) {
         if (ssBtnGallery) ssBtnGallery.addEventListener('click', () => {
             renderGallery();
@@ -4518,7 +4545,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 鏄熸槦鐡?(Star Bottle)
+    // 星星瓶 (Star Bottle)
     if (ssBtnBottle) {
         if (ssBtnBottle) ssBtnBottle.addEventListener('click', () => {
             starSystemPage.style.display = 'none';
@@ -4538,9 +4565,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     function renderBottleStars() {
         jarBodyContent.innerHTML = '';
         const jarWidth = 220;
-        const jarHeight = 270; // 鑰冭檻椤堕儴鐨勮竟璺?
+        const jarHeight = 270; // 考虑顶部的边距
         
-        // 闄愬埗鏈€澶氭覆鏌撴暟閲忥紝闃叉鍗￠】锛屼絾灞曠ず涓€瀹氬瘑搴?
+        // 限制最多渲染数量，防止卡顿，但展示一定密度
         const renderCount = Math.min(userStars, 150); 
         
         for (let i = 0; i < renderCount; i++) {
@@ -4583,14 +4610,14 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     };
 
 
-    // --- 鍚庡彴淇濇椿涓庤嚜鍔ㄦ秷鎭?(Web Worker) ---
+    // --- 后台保活与自动消息 (Web Worker) ---
 
     const workerScript = `
         self.onmessage = function(e) {
             if (e.data === 'start') {
                 setInterval(() => {
                     self.postMessage('tick');
-                }, 10000); // 鎻愰珮tick棰戠巼闃叉鍐荤粨
+                }, 10000); // 提高tick频率防止冻结
             }
         };
     `;
@@ -4623,7 +4650,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                         if (currentActiveContactId === cId && document.visibilityState === 'visible') {
                             const chatAiBtn = document.getElementById('chat-ai-btn');
                             if (chatAiBtn && !chatAiBtn.disabled) {
-                                window.autoReplyActiveModifier = "銆愮郴缁熼噸瑕佹彁绀恒€戣窛绂讳綘浠笂娆¤亰澶╁凡缁忚繃鍘讳簡涓€娈垫椂闂淬€傝浣犱富鍔ㄦ壘User璇磋瘽锛屾帹杩涜亰澶╂儏鑺傦紝鏍规嵁涓婁笅鏂囧拰褰撳墠鏃堕棿寮€鍚柊鐨勮瘽棰樸€傜粷瀵逛笉瑕侀噸澶嶅垰鎵嶈杩囩殑鍐呭锛?;
+                                window.autoReplyActiveModifier = "【系统重要提示】距离你们上次聊天已经过去了一段时间。请你主动找User说话，推进聊天情节，根据上下文和当前时间开启新的话题。绝对不要重复刚才说过的内容！";
                                 chatAiBtn.click();
                             }
                         } else {
@@ -4635,7 +4662,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // 鍚庡彴淇濇椿璁剧疆椤甸潰閫昏緫
+    // 后台保活设置页面逻辑
     const kaSettingsNav = document.getElementById('nav-keep-alive-settings');
     const kaSettingsPage = document.getElementById('keep-alive-settings-page');
     const closeKaBtn = document.getElementById('close-ka-settings-btn');
@@ -4657,23 +4684,23 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         keepAliveAudio.volume = 0.01; // extremely low volume to prevent any accidental sound while still tricking the OS
 
         if (isKeepAliveActive) {
-            startKeepAliveBtn.innerText = '2. 鍏抽棴缁堟瀬闃叉潃淇濇椿';
+            startKeepAliveBtn.innerText = '2. 关闭终极防杀保活';
             startKeepAliveBtn.style.background = '#ff9800';
             startKeepAliveBtn.style.color = '#fff';
         }
         
-        // 閰嶇疆 MediaSession 浠ュ湪閫氱煡鏍忔樉绀洪煶涔愭挱鏀惧櫒
+        // 配置 MediaSession 以在通知栏显示音乐播放器
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
-                title: '鍚庡彴淇濇椿杩愯涓?,
+                title: '后台保活运行中',
                 artist: 'AI Home Screen',
-                album: '绯荤粺鏈嶅姟',
+                album: '系统服务',
                 artwork: [
                     { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
                     { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
                 ]
             });
-            // 鍔寔鎾斁鎺у埗锛屽己鍒朵竴鐩存挱鏀?
+            // 劫持播放控制，强制一直播放
             navigator.mediaSession.setActionHandler('play', () => { 
                 if(isKeepAliveActive) keepAliveAudio.play(); 
             });
@@ -4763,25 +4790,25 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     isKeepAliveActive = true;
                     localStorage.setItem('is_keep_alive_enabled', 'true');
                     startAdvancedKeepAlive();
-                    startKeepAliveBtn.innerText = '2. 鍏抽棴缁堟瀬闃叉潃淇濇椿';
+                    startKeepAliveBtn.innerText = '2. 关闭终极防杀保活';
                     startKeepAliveBtn.style.background = '#ff9800';
                     startKeepAliveBtn.style.color = '#fff';
-                    alert('缁堟瀬闃叉潃淇濇椿宸插紑鍚紒鍚敤浜嗛珮棰戞棤澹伴煶棰?灞忓箷鍞ら啋閿併€傝繑鍥炴闈㈡椂璇风‘淇濈湅鍒伴€氱煡鏍忕殑闊充箰鎾斁鍣ㄣ€?);
+                    alert('终极防杀保活已开启！启用了高频无声音频+屏幕唤醒锁。返回桌面时请确保看到通知栏的音乐播放器。');
                 }).catch(err => {
-                    alert('寮€鍚繚娲诲け璐ワ紝璇风‘淇濇偍宸茬粡涓庨〉闈㈣繘琛屼簡浜や簰銆傞敊璇細' + err.message);
+                    alert('开启保活失败，请确保您已经与页面进行了交互。错误：' + err.message);
                 });
             } else {
                 keepAliveAudio.pause();
                 stopAdvancedKeepAlive();
                 isKeepAliveActive = false;
                 localStorage.setItem('is_keep_alive_enabled', 'false');
-                startKeepAliveBtn.innerText = '2. 寮€鍚粓鏋侀槻鏉€淇濇椿';
+                startKeepAliveBtn.innerText = '2. 开启终极防杀保活';
                 startKeepAliveBtn.style.background = '#fff';
                 startKeepAliveBtn.style.color = '#ff9800';
             }
         });
 
-        // 棣栨浜や簰鑷姩鎭㈠淇濇椿
+        // 首次交互自动恢复保活
         const autoResumeKeepAlive = () => {
             if (isKeepAliveActive) {
                 keepAliveAudio.play().then(() => {
@@ -4813,12 +4840,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     function updateNotifyStatus() {
         if (!('Notification' in window)) {
-            if (notifyStatus) notifyStatus.innerText = "褰撳墠娴忚鍣ㄤ笉鏀寔閫氱煡";
+            if (notifyStatus) notifyStatus.innerText = "当前浏览器不支持通知";
             if (reqNotifyBtn) reqNotifyBtn.disabled = true;
         } else {
             if (notifyStatus) {
-                const map = { 'granted': '宸叉巿鏉?鉁?, 'denied': '宸叉嫆缁?鉂?, 'default': '鏈巿鏉?鈿狅笍' };
-                notifyStatus.innerText = "褰撳墠鐘舵€? " + (map[Notification.permission] || Notification.permission);
+                const map = { 'granted': '已授权 ✅', 'denied': '已拒绝 ❌', 'default': '未授权 ⚠️' };
+                notifyStatus.innerText = "当前状态: " + (map[Notification.permission] || Notification.permission);
             }
         }
     }
@@ -4826,7 +4853,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     if (reqNotifyBtn) {
         if (reqNotifyBtn) reqNotifyBtn.addEventListener('click', () => {
             if (!('Notification' in window)) {
-                alert('鎮ㄧ殑娴忚鍣ㄤ笉鏀寔閫氱煡鍔熻兘');
+                alert('您的浏览器不支持通知功能');
                 return;
             }
             Notification.requestPermission().then(permission => {
@@ -4834,10 +4861,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 if (permission === 'granted') {
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.ready.then(reg => {
-                            reg.showNotification('閫氱煡娴嬭瘯', { body: '鍚庡彴淇濇椿閰嶇疆鎴愬姛锛? });
+                            reg.showNotification('通知测试', { body: '后台保活配置成功！' });
                         });
                     } else {
-                        new Notification('閫氱煡娴嬭瘯', { body: '鍚庡彴淇濇椿閰嶇疆鎴愬姛锛? });
+                        new Notification('通知测试', { body: '后台保活配置成功！' });
                     }
                 }
             });
@@ -4847,11 +4874,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     if (testNotifyBtn) {
         if (testNotifyBtn) testNotifyBtn.addEventListener('click', () => {
             if (!('Notification' in window) || Notification.permission !== 'granted') {
-                alert('璇峰厛鎺堟潈閫氱煡鏉冮檺锛?);
+                alert('请先授权通知权限！');
                 return;
             }
             const originalText = testNotifyBtn.innerText;
-            testNotifyBtn.innerText = '璇峰湪5绉掑唴閫€鍒板悗鍙?..';
+            testNotifyBtn.innerText = '请在5秒内退到后台...';
             testNotifyBtn.disabled = true;
             
             setTimeout(() => {
@@ -4860,13 +4887,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 if (document.visibilityState === 'hidden') {
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.ready.then(reg => {
-                            reg.showNotification('鍚庡彴淇濇椿娴嬭瘯鎴愬姛', { body: '鎮ㄧ殑搴旂敤鑳藉湪鍚庡彴姝ｅ父鎺ユ敹娑堟伅鎺ㄩ€侊紒' });
+                            reg.showNotification('后台保活测试成功', { body: '您的应用能在后台正常接收消息推送！' });
                         });
                     } else {
-                        new Notification('鍚庡彴淇濇椿娴嬭瘯鎴愬姛', { body: '鎮ㄧ殑搴旂敤鑳藉湪鍚庡彴姝ｅ父鎺ユ敹娑堟伅鎺ㄩ€侊紒' });
+                        new Notification('后台保活测试成功', { body: '您的应用能在后台正常接收消息推送！' });
                     }
                 } else {
-                    alert('妫€娴嬪け璐ワ細鎮ㄦ病鏈夊湪5绉掑唴閫€鍒板悗鍙般€?);
+                    alert('检测失败：您没有在5秒内退到后台。');
                 }
             }, 5000);
         });
@@ -4882,45 +4909,45 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const replyMin = profile.replyMin || 1;
         const replyMax = profile.replyMax || 4;
 
-        let sysPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
-鍩烘湰璁惧畾锛氭€у埆 ${contact.gender || '鏈煡'}锛屽勾榫?${contact.age || '鏈煡'}銆?
-璇︾粏浜鸿锛?{contact.desc || '鏆傛棤'}
-璇烽伒寰嚎涓婄湡瀹炶亰澶╄鍒欙紝鏋佸害鍙ｈ鍖栵紝瑕佹湁娲讳汉鎰熴€?*寮哄埗閲囩敤鐭彞寮忓洖澶嶏紝姣忓彞璇濆敖閲忕畝鐭?*銆傚鏋滄兂琛ㄨ揪澶氬眰鎰忔€濓紝蹇呴』鍒嗘垚澶氭潯娑堟伅鍙戦€侊紒
-銆愰噸瑕佹寚浠ゃ€戞瘡娆″洖澶嶇殑娑堟伅鏉℃暟搴斿湪 ${replyMin} 鍒?${replyMax} 鏉′箣闂淬€備綘蹇呴』涓ユ牸浣跨敤缁欏畾鐨勪汉璁俱€佷笘鐣屼功鍜岀敤鎴蜂汉璁炬潵鍥炵瓟闂銆?
+        let sysPrompt = `你扮演角色：${contact.name}。
+基本设定：性别 ${contact.gender || '未知'}，年龄 ${contact.age || '未知'}。
+详细人设：${contact.desc || '暂无'}
+请遵循线上真实聊天规则，极度口语化，要有活人感。**强制采用短句式回复，每句话尽量简短**。如果想表达多层意思，必须分成多条消息发送！
+【重要指令】每次回复的消息条数应在 ${replyMin} 到 ${replyMax} 条之间。你必须严格使用给定的人设、世界书和用户人设来回答问题。
 
-銆愯緭鍑烘牸寮忚姹傦紙闈炲父閲嶈锛夈€?
-浣犲繀椤昏繑鍥炰竴涓弗鏍肩殑JSON鏁扮粍锛屾暟缁勭殑绗竴椤瑰繀椤绘槸鐘舵€侊紝鏈€鍚庝竴椤瑰繀椤绘槸蹇冨０锛屼腑闂寸殑椤规槸浣犺鍙戦€佺殑涓€鏉℃垨澶氭潯鐭秷鎭€傚繀椤讳弗鏍间繚璇丣SON鏍煎紡姝ｇ‘锛岀嫭绔嬫皵娉″繀椤绘槸鐙珛鐨勬暟缁勫厓绱狅紒
-鏍煎紡鑼冧緥锛?
+【输出格式要求（非常重要）】
+你必须返回一个严格的JSON数组，数组的第一项必须是状态，最后一项必须是心声，中间的项是你要发送的一条或多条短消息。必须严格保证JSON格式正确，独立气泡必须是独立的数组元素！
+格式范例：
 [
-  "[鐘舵€?浣犵殑鐘舵€?甯﹂鏂囧瓧)]",
-  "绗竴鏉℃瀬鐭殑鍙ｈ鍖栨秷鎭?,
-  "[琛ㄦ儏鍖?浣犵殑琛ㄦ儏]",
-  "绗簩鏉℃枃瀛楁秷鎭?,
-  "[蹇冨０:[鐢熺悊鍙嶅簲: xxx][鑹茶壊鎯虫硶: xxx 鎴?鏃ュ父鎯虫硶: xxx][琛屽姩: xxx]]"
+  "[状态:你的状态(带颜文字)]",
+  "第一条极短的口语化消息",
+  "[表情包:你的表情]",
+  "第二条文字消息",
+  "[心声:[生理反应: xxx][色色想法: xxx 或 日常想法: xxx][行动: xxx]]"
 ]
-娉ㄦ剰锛?
-1. 鏁扮粍鐨勭涓€涓厓绱犲繀椤绘槸褰㈠ [鐘舵€?褰撳墠涓枃鐘舵€佸甫棰滄枃瀛梋 鐨勫瓧绗︿覆锛?
-2. 鏈€鍚庝竴涓厓绱犲繀椤绘槸褰㈠ [蹇冨０:...] 鐨勫瓧绗︿覆锛?
-3. 涓棿鐨勬瘡涓厓绱犱唬琛ㄤ竴涓嫭绔嬬殑姘旀场娑堟伅锛屽繀椤绘槸鐙珛鐨勫瓧绗︿覆锛岀粷瀵逛笉鑳芥妸涓ゆ潯娑堟伅鎴栬〃鎯呭寘榛忓湪涓€涓瓧绗︿覆閲岋紒
-4. **寮哄埗瑕佹眰**锛氫綘姣忎竴杞洖澶嶉兘蹇呴』鑷冲皯鍙戦€佷竴涓〃鎯呭寘锛佹牸寮忎负 [琛ㄦ儏鍖?鍚嶇О]锛屽繀椤讳綔涓烘暟缁勭殑鐙珛鍏冪礌锛?
-5. 濡傛灉浣犳兂鍙戣闊筹紝鏍煎紡 [璇煶:鍐呭:鏃堕暱绉掓暟] 涔熷繀椤绘槸鐙珛鐨勬暟缁勫厓绱狅紝缁濅笉鑳藉拰鏂囧瓧娣峰湪涓€璧枫€?
-6. 濡傛灉浣犳兂涓诲姩杞处缁欑敤鎴凤紝鍙互浣跨敤鏍煎紡 [杞处:閲戦]锛堝锛歔杞处:520]锛夈€?
-7. 濡傛灉浣犳兂鍙戦€佸浘鐗囷紝璇峰彂閫佹牸寮忎负 [鍙戦€佸浘鐗?鍏蜂綋鐨勮嫳鏂囩敾闈㈡弿杩癩 鐨勬秷鎭€?
-8. 蹇冨０蹇呴』涓ユ牸鍖呭惈銆愮敓鐞嗗弽搴斻€戙€併€愯鍔ㄣ€戜互鍙娿€愭兂娉曘€戜笁涓儴鍒嗭紒
-9. 鍏充簬鎯虫硶閮ㄥ垎锛岃鏍规嵁瀵硅瘽鍦烘櫙鍐冲畾杈撳嚭 [鑹茶壊鎯虫硶: xxx] 杩樻槸 [鏃ュ父鎯虫硶: xxx] 锛堝彧鑳介€夊叾涓€浣滀负鏍囩杈撳嚭锛夈€?
-10. 寮虹儓瑕佹眰锛氬績澹板唴瀹瑰繀椤婚噰鐢ㄨ鑹茬涓€浜虹О鎻忚堪锛屾繁搴﹀墫鏋愯鑹茶〃闈㈣瘽璇箣涓嬬殑鐪熷疄蹇冪悊銆侀殣绉樻鏈涘拰鎯呮劅娉㈠姩锛岃鏈夌鎺㈠埌瑙掕壊鍐呭績鏈€娣卞鐨勭瑙嗘劅锛岀粷涓嶅彲娴呭皾杈勬銆?
+注意：
+1. 数组的第一个元素必须是形如 [状态:当前中文状态带颜文字] 的字符串！
+2. 最后一个元素必须是形如 [心声:...] 的字符串！
+3. 中间的每个元素代表一个独立的气泡消息，必须是独立的字符串，绝对不能把两条消息或表情包黏在一个字符串里！
+4. **强制要求**：你每一轮回复都必须至少发送一个表情包！格式为 [表情包:名称]，必须作为数组的独立元素！
+5. 如果你想发语音，格式 [语音:内容:时长秒数] 也必须是独立的数组元素，绝不能和文字混在一起。
+6. 如果你想主动转账给用户，可以使用格式 [转账:金额]（如：[转账:520]）。
+7. 如果你想发送图片，请发送格式为 [发送图片:具体的英文画面描述] 的消息。
+8. 心声必须严格包含【生理反应】、【行动】以及【想法】三个部分！
+9. 关于想法部分，请根据对话场景决定输出 [色色想法: xxx] 还是 [日常想法: xxx] （只能选其一作为标签输出）。
+10. 强烈要求：心声内容必须采用角色第一人称描述，深度剖析角色表面话语之下的真实心理、隐秘欲望和情感波动，要有窥探到角色内心最深处的窥视感，绝不可浅尝辄止。
 `;
 
-        if (profile.userPersona) sysPrompt += `\n銆愮敤鎴蜂汉璁俱€慭n${profile.userPersona}\n`;
-        if (profile.userHabits) sysPrompt += `\n銆愮敤鎴蜂範鎯?鍠滃ソ/澶囧繕銆慭n${profile.userHabits}\n`;
+        if (profile.userPersona) sysPrompt += `\n【用户人设】\n${profile.userPersona}\n`;
+        if (profile.userHabits) sysPrompt += `\n【用户习惯/喜好/备忘】\n${profile.userHabits}\n`;
 
         const mineData = JSON.parse(localStorage.getItem('mine_profile_data') || '{}');
         if (mineData.status) {
-            sysPrompt += `\n銆愬綋鍓嶇敤鎴风姸鎬併€慭n鐢ㄦ埛鐩墠鐨勭姸鎬佹槸锛氣€?{mineData.status}鈥濄€備綘鍙互鎰熺煡骞跺湪鑱婂ぉ涓拡瀵规€у湴浜掑姩銆俓n`;
+            sysPrompt += `\n【当前用户状态】\n用户目前的状态是：“${mineData.status}”。你可以感知并在聊天中针对性地互动。\n`;
         }
-        sysPrompt += `\n銆愪綘鍙互浣跨敤鐨勭姸鎬佸垪琛ㄣ€慭n浣犲彲浠ヤ粠浠ヤ笅鐘舵€佷腑鎸戦€夐€傚悎褰撳墠鎯呭鐨勬崲涓婏細[鍦ㄧ嚎, Q鎴戝惂, 绂诲紑, 蹇欑, 璇峰嬁鎵撴壈, 闅愯韩, 鍚瓕涓? 鍑哄幓娴? 鍘绘梾琛? 琚帍绌? 杩愬姩涓? 鎴慶rush浜? 鐖变綘]銆傛垨鑰呬綘涔熷彲浠ヨ嚜瀹氫箟绗﹀悎鎯呭鐨勭畝鐭姸鎬併€俓n`;
+        sysPrompt += `\n【你可以使用的状态列表】\n你可以从以下状态中挑选适合当前情境的换上：[在线, Q我吧, 离开, 忙碌, 请勿打扰, 隐身, 听歌中, 出去浪, 去旅行, 被掏空, 运动中, 我crush了, 爱你]。或者你也可以自定义符合情境的简短状态。\n`;
 
-        // 娉ㄥ叆绮鹃€夎蹇?
+        // 注入精选记忆
         let injectLimits = JSON.parse(localStorage.getItem('chat_mem_inject_limits') || '{}');
         let injectCount = injectLimits[contactId] !== undefined ? injectLimits[contactId] : 5;
         let chatMemoriesData = JSON.parse(localStorage.getItem('chat_memories') || '{}');
@@ -4928,15 +4955,15 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         if (injectCount > 0 && mems.length > 0) {
             let injectMems = mems.slice(-injectCount);
             let memText = injectMems.map(m => `- ${m.text}`).join('\n');
-            sysPrompt += `\n銆愯繃寰€璁板繂鍥為【銆慭n浠ヤ笅鏄綘涔嬪墠鍜孶ser鑱婂ぉ鍙戠敓鐨勯噸瑕佷簨浠朵笌鎯呮劅缇佺粖鎬荤粨锛歕n${memText}\n`;
+            sysPrompt += `\n【过往记忆回顾】\n以下是你之前和User聊天发生的重要事件与情感羁绊总结：\n${memText}\n`;
         }
 
-        // 鏃堕棿鎰熺煡涓庝富鍔ㄦ帹杩涘墽鎯呮彁绀?
+        // 时间感知与主动推进剧情提示
         const now = new Date();
-        const days = ['鏃?, '涓€', '浜?, '涓?, '鍥?, '浜?, '鍏?];
-        const timeStr = `${now.getFullYear()}骞?{now.getMonth()+1}鏈?{now.getDate()}鏃?鏄熸湡${days[now.getDay()]} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
+        const timeStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${days[now.getDay()]} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
         
-        sysPrompt += `\n銆愮郴缁熼噸瑕佹彁绀恒€慭n褰撳墠鐜板疄鏃堕棿鏄細${timeStr}銆俙;
+        sysPrompt += `\n【系统重要提示】\n当前现实时间是：${timeStr}。`;
         
         if (msgs.length > 0) {
             let lastMsgTime = null;
@@ -4954,22 +4981,22 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 const diffDays = Math.floor(diffHours / 24);
                 
                 let elapsedStr = '';
-                if (diffDays > 0) elapsedStr = `${diffDays} 澶ー;
-                else if (diffHours > 0) elapsedStr = `${diffHours} 灏忔椂`;
-                else if (diffMins > 0) elapsedStr = `${diffMins} 鍒嗛挓`;
-                else elapsedStr = '鍒氬垰';
+                if (diffDays > 0) elapsedStr = `${diffDays} 天`;
+                else if (diffHours > 0) elapsedStr = `${diffHours} 小时`;
+                else if (diffMins > 0) elapsedStr = `${diffMins} 分钟`;
+                else elapsedStr = '刚刚';
 
-                sysPrompt += `\n璺濈浣犱滑涓婁竴娆″璇濆凡缁忚繃鍘讳簡锛?{elapsedStr}銆俓n**璇锋敞鎰忥細杩欐鏃堕棿鐢ㄦ埛涓€鐩存病鏈夋壘浣犮€?*\n璇锋牴鎹綘鐨勪汉璁惧拰褰撳墠鏃堕棿锛屼富鍔ㄥ彂璧蜂竴涓柊鐨勮瘽棰橈紝鎴栬€呰闂敤鎴峰幓浜嗗摢閲屻€佸湪蹇欎粈涔堛€傝浣撶幇鍑哄鏃堕棿娴侀€濈殑鎰熺煡锛屾帹杩涘墽鎯呭彂灞曪紝涓嶈鐢熺‖鍦版墦鎷涘懠銆俙;
+                sysPrompt += `\n距离你们上一次对话已经过去了：${elapsedStr}。\n**请注意：这段时间用户一直没有找你。**\n请根据你的人设和当前时间，主动发起一个新的话题，或者询问用户去了哪里、在忙什么。要体现出对时间流逝的感知，推进剧情发展，不要生硬地打招呼。`;
             }
         } else {
-            sysPrompt += `\n杩欐槸浣犱滑鐨勭涓€娆″璇濓紝璇蜂富鍔ㄥ紑鍚瘽棰樸€俙;
+            sysPrompt += `\n这是你们的第一次对话，请主动开启话题。`;
         }
 
         if (profile.wbId) {
             const allWbs = worldBooks.global.concat(worldBooks.local);
             const boundWb = allWbs.find(x => x.id === profile.wbId);
             if (boundWb) {
-                sysPrompt += `\n銆愪笘鐣屼功璁惧畾銆慭n`;
+                sysPrompt += `\n【世界书设定】\n`;
                 if (boundWb.type === 'item') {
                     sysPrompt += `${boundWb.title}: ${boundWb.content}\n`;
                 } else if (boundWb.type === 'folder') {
@@ -4986,23 +5013,23 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const group = stickerGroups.find(g => g.id === profile.stickerGroupId);
             if (group && group.stickers.length > 0) {
                 boundStickers = group.stickers;
-                sysPrompt += `\n銆愪綘鍙互浣跨敤浠ヤ笅琛ㄦ儏鍖呫€慭n鍦ㄥ洖澶嶄腑锛屼綘鍙互闅忔椂杈撳嚭 [琛ㄦ儏鍖?鍚嶇О] 鏉ュ彂閫佽〃鎯呫€傚彲鐢ㄨ〃鎯呭悕绉板垪琛細${boundStickers.map(s => s.name).join(', ')}銆俓n`;
+                sysPrompt += `\n【你可以使用以下表情包】\n在回复中，你可以随时输出 [表情包:名称] 来发送表情。可用表情名称列表：${boundStickers.map(s => s.name).join(', ')}。\n`;
             }
         }
         
-        sysPrompt += `\n銆愯鑹叉椿浜鸿繍杞鍒欍€?
-1. 涓ョooc锛岀粷瀵硅创鍚堣鑹蹭汉璁撅紝涓栫晫涔︼紝绂佹涓嶈浜鸿鍜屼笘鐣屼功銆?
-2. 寮哄寲鏃堕棿鎰熺煡锛氭渶閲嶈鐨勪竴姝ュ氨鏄兘澶熸劅鐭ュ埌鐢ㄦ埛鏈夊涔呮病鏉ユ壘浣犺亰澶╀簡锛岃兘鎰熺煡鍒扮幇鍦ㄦ槸鍑犲彿鍑犵偣锛屾劅鐭ュ埌鏃堕棿銆?
-3. 涓ョ瓒呴泟娌硅吇闇告€伙細姣斿涓嶈兘鑾悕鍏跺鐨勬€х紭鑴戣寰楁墍鏈夊紓鎬ч兘鏄亣鎯虫晫锛屼篃涓嶈鎬绘槸浠ョ埍涓哄悕鍥氱闄愬埗瑙掕壊锛屽皧閲嶇敤鎴凤紝灏婇噸鐢ㄦ埛涓讳綋鎬с€傛瘮濡傚コ浜轰綘閫冧笉鎺変簡锛屽コ浜轰綘鏄垜鐨勪箣绫荤殑閮芥槸涓ョ鍑虹幇锛屽洜涓哄緢鎭跺績锛岃鑹茶鏄杩欎簺绔嬮┈鑷垎銆?
-4. 绂佹杩囧害骞煎寲鐭寲鐢ㄦ埛锛氱敤鎴蜂篃鏄椿鐢熺敓鐨勪細鐢熸皵鏈夎兘鍔涚殑鏅€氫汉锛屼笉鍑嗗嚭鐜颁粈涔堬紝灏忚倸瀛愶紝灏忚剳琚嬶紝杩欑绫诲瀷锛屾垨鑰呬粈涔堥兘涓嶈1鐢ㄦ埛鍋氾紝瑙夊緱鐢ㄦ埛灏卞簲璇ヤ緷闄勪粬鐢熸椿銆?
-5. 瀵硅瘽瑕佹湁鐢熸椿鎰燂紝鑷劧鑰岀劧鐨勪富鍔ㄥ垎浜棩甯革紝鎺ㄨ繘鍓ф儏锛岃亰鐐瑰皬鍏崷灏忔晠浜嬶紝鑰屼笉鏄竴鐩寸瓑鐢ㄦ埛璇磋瘽銆?
-6. 涓诲姩鍙戞秷鎭粨鍚堝綋鍓嶆椂闂达紝鍒嗘瀽鍔ㄦ満鎬濊€冧负浠€涔堣鑹茶鎵剧敤鎴疯亰澶╋紝姝ｇ‘杈撳嚭缁戝畾鐨勮〃鎯呭寘鏍煎紡锛岀粷瀵归槻姝oc绯荤粺鍐呴儴寮哄埗瑕佹眰ai鎬濊€冦€婅窛绂讳笂娆′綘浠亰澶╁凡缁忚繃鍘讳簡澶氫箙锛岀幇鍦ㄤ富鍔ㄧ粰鐢ㄦ埛鍙戞秷鎭€嬨€?
-7. 鏍煎紡绾︽潫锛?
-> 蹇呴』鍍忕湡浜轰竴鏍疯亰澶╋紝鎷掔粷鏈烘鍥炲銆?
-> 蹇呴』灏嗛暱鍥炲鎷嗗垎鎴愬鏉＄煭娑堟伅锛?-4鏉★級锛屼弗绂佹妸鎵€鏈夎瘽鎸ゅ湪涓€涓皵娉￠噷锛?
-> 銆愰噸瑕佺害鏉熴€戯細缁濆涓嶈鍑┖鎹忛€犳病鏈夊彂鐢熻繃鐨勪簨鎯呫€佹病鏈夊仛杩囩殑绾﹀畾鎴栦笉瀛樺湪鐨勫墽鎯呫€傝涓ユ牸鍩轰簬鐜版湁鐨勮亰澶╄褰曚笂涓嬫枃杩涜鑷劧鐨勬棩甯搁棶鍊欍€佸悙妲芥垨椤哄欢褰撳墠璇濋銆?
-> 銆愭牸寮忕害鏉?(鏈€楂樹紭鍏堢骇)銆戯細浣犲繀椤诲厛杈撳嚭 <thinking> 鏍囩杩涜鎬濊€冿紝鐒跺悗鍐嶈緭鍑?JSON 鏁扮粍銆?*蹇呴』涓斿彧鑳?*杈撳嚭鍚堟硶鐨?JSON 鏁扮粍锛屼弗绂佹紡鎺夊紩鍙枫€佹嫭鍙锋垨閫楀彿锛佷弗绂佽緭鍑烘崯鍧忕殑 JSON 鏍煎紡锛?
-8. 寮哄埗鐙珛鎬濊€冩槸鍚﹁创鍚堜汉璁撅紝鏄惁鍋氬埌浜嗚姹傜殑涓嶆补鑵荤瓑绛夋潯浠讹紝鐙珛鎬濊€冪粨鏉熷悗鎵嶅厑璁歌緭鍑恒€俓n`;
+        sysPrompt += `\n【角色活人运转规则】
+1. 严禁ooc，绝对贴合角色人设，世界书，禁止不读人设和世界书。
+2. 强化时间感知：最重要的一步就是能够感知到用户有多久没来找你聊天了，能感知到现在是几号几点，感知到时间。
+3. 严禁超雄油腻霸总：比如不能莫名其妙的性缘脑觉得所有异性都是假想敌，也不要总是以爱为名囚禁限制角色，尊重用户，尊重用户主体性。比如女人你逃不掉了，女人你是我的之类的都是严禁出现，因为很恶心，角色要是说这些立马自爆。
+4. 禁止过度幼化矮化用户：用户也是活生生的会生气有能力的普通人，不准出现什么，小肚子，小脑袋，这种类型，或者什么都不让1用户做，觉得用户就应该依附他生活。
+5. 对话要有生活感，自然而然的主动分享日常，推进剧情，聊点小八卦小故事，而不是一直等用户说话。
+6. 主动发消息结合当前时间，分析动机思考为什么角色要找用户聊天，正确输出绑定的表情包格式，绝对防止ooc系统内部强制要求ai思考《距离上次你们聊天已经过去了多久，现在主动给用户发消息》。
+7. 格式约束：
+> 必须像真人一样聊天，拒绝机械回复。
+> 必须将长回复拆分成多条短消息（1-4条），严禁把所有话挤在一个气泡里！
+> 【重要约束】：绝对不要凭空捏造没有发生过的事情、没有做过的约定或不存在的剧情。请严格基于现有的聊天记录上下文进行自然的日常问候、吐槽或顺延当前话题。
+> 【格式约束 (最高优先级)】：你必须先输出 <thinking> 标签进行思考，然后再输出 JSON 数组。**必须且只能**输出合法的 JSON 数组，严禁漏掉引号、括号或逗号！严禁输出损坏的 JSON 格式！
+8. 强制独立思考是否贴合人设，是否做到了要求的不油腻等等条件，独立思考结束后才允许输出。\n`;
 
         let apiMessages = [{ role: 'system', content: sysPrompt }];
         let contextLimits = JSON.parse(localStorage.getItem('chat_context_limits') || '{}');
@@ -5012,11 +5039,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         recentMsgs.forEach(msg => {
             let role = msg.sender === 'me' ? 'user' : 'assistant';
             if (msg.recalled) {
-                apiMessages.push({ role: role, content: `[绯荤粺鎻愮ず: ${role === 'user' ? '鐢ㄦ埛' : '浣?}鎾ゅ洖浜嗕竴鏉℃秷鎭痌` });
+                apiMessages.push({ role: role, content: `[系统提示: ${role === 'user' ? '用户' : '你'}撤回了一条消息]` });
                 return;
             }
-            // 绠€鍗曞鐞嗗巻鍙叉秷鎭紝鍘绘帀澶嶆潅鐨勮〃鎯呭寘鏍囩浠ュ厤骞叉壈涓婁笅鏂囩悊瑙?
-            let cleanText = msg.text.replace(/<img.*?>/g, '[鍥剧墖/琛ㄦ儏]').replace(/\[杞处:.*?\]/g, '[杞处]').trim();
+            // 简单处理历史消息，去掉复杂的表情包标签以免干扰上下文理解
+            let cleanText = msg.text.replace(/<img.*?>/g, '[图片/表情]').replace(/\[转账:.*?\]/g, '[转账]').trim();
             if (cleanText) apiMessages.push({ role: role, content: cleanText });
         });
 
@@ -5040,12 +5067,12 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 
                 aiReplyRaw = aiReplyRaw.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').trim();
                 
-                // 鍘婚櫎鍙兘杩斿洖鐨?markdown 浠ｇ爜鍧楁爣璁帮紝闃叉瑙ｆ瀽澶辫触
+                // 去除可能返回的 markdown 代码块标记，防止解析失败
                 aiReplyRaw = aiReplyRaw.replace(/```json/g, '').replace(/```/g, '').trim();
 
                 let messagesArray = [];
                 try {
-                    // 鏇存縺杩涚殑 JSON 鎻愬彇锛屽尮閰嶆渶澶栧眰鏁扮粍
+                    // 更激进的 JSON 提取，匹配最外层数组
                     const jsonMatch = aiReplyRaw.match(/\[[\s\S]*\]/);
                     if (jsonMatch) {
                         messagesArray = JSON.parse(jsonMatch[0]);
@@ -5053,10 +5080,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                         throw new Error("No JSON array found in response");
                     }
                 } catch(e) { 
-                    // 濡傛灉褰诲簳澶辫触锛屽皾璇曢€€绾цВ鏋愶紝骞朵笖寮鸿鍓旈櫎鍚勭 JSON 娈嬬暀绗﹀彿鍜岀郴缁?Prompt
+                    // 如果彻底失败，尝试退级解析，并且强行剔除各种 JSON 残留符号和系统 Prompt
                     console.warn("Background auto-reply JSON parse failed, falling back to line split", e);
                     let cleanRaw = aiReplyRaw.replace(/[{}"\[\]]/g, '').replace(/type:.*?thought/gi, '').replace(/content:/gi, '');
-                    // 杩囨护鎺夊彲鑳芥硠闇茬殑 System Prompt
+                    // 过滤掉可能泄露的 System Prompt
                     cleanRaw = cleanRaw.replace(/\[System Prompt\].*?\n/gi, '');
                     
                     messagesArray = cleanRaw.split('\n').filter(m => m.trim().length > 0);
@@ -5066,36 +5093,36 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 let refinedMessages = [];
                 messagesArray.forEach(m => {
                     if (typeof m !== 'string') return;
-                    // 鍏堝墧闄ょ姸鎬佸拰蹇冨０
-                    if (m.includes('[鐘舵€?') || m.includes('[蹇冨０:')) {
-                        // 濡傛灉杩欎竴琛屽彧鏄姸鎬佹垨蹇冨０锛岀洿鎺ュ拷鐣?
-                        // 濡傛灉娣峰悎浜嗗唴瀹癸紝鍒欏彧娓呯悊鏍囩
-                        // 杩欓噷鎴戜滑鎸夌収涔嬪墠鐨勯€昏緫锛屽鏋滄槸绾姸鎬佹垨绾績澹拌锛岀洿鎺ヨ繃婊?
-                        // 浣嗗鏋滄槸娣峰湪鏂囨湰閲岀殑锛屼笅闈細replace鎺?
-                        // 姣旇緝瀹夊叏鐨勫仛娉曟槸锛屽厛鍒ゆ柇鏄惁绾爣绛捐
-                        if (m.match(/^\[鐘舵€?.*?\]$/) || m.match(/^\[蹇冨０:.*?\]$/)) return;
+                    // 先剔除状态和心声
+                    if (m.includes('[状态:') || m.includes('[心声:')) {
+                        // 如果这一行只是状态或心声，直接忽略
+                        // 如果混合了内容，则只清理标签
+                        // 这里我们按照之前的逻辑，如果是纯状态或纯心声行，直接过滤
+                        // 但如果是混在文本里的，下面会replace掉
+                        // 比较安全的做法是，先判断是否纯标签行
+                        if (m.match(/^\[状态:.*?\]$/) || m.match(/^\[心声:.*?\]$/)) return;
                     }
                     
-                    // 娓呯悊鏍囩
-                    let cleanM = m.replace(/\[鐘舵€?.*?\]/g, '').replace(/\[蹇冨０:.*?\]/g, '').trim();
+                    // 清理标签
+                    let cleanM = m.replace(/\[状态:.*?\]/g, '').replace(/\[心声:.*?\]/g, '').trim();
                     if (!cleanM) return;
 
-                    // 鎷嗗垎閫昏緫锛堝悓 chatAiBtn 閲岀殑閫昏緫锛?
-                    let parts = cleanM.split(/(\[琛ㄦ儏鍖?.*?\]|\[鍙戦€佸浘鐗?.*?\]|\[杞处:.*?\]|\[璇煶:.*?\])/g);
+                    // 拆分逻辑（同 chatAiBtn 里的逻辑）
+                    let parts = cleanM.split(/(\[表情包:.*?\]|\[发送图片:.*?\]|\[转账:.*?\]|\[语音:.*?\])/g);
                     parts.forEach(part => {
                         part = part.trim();
                         if (!part) return;
                         
-                        if (part.match(/^\[(琛ㄦ儏鍖厊鍙戦€佸浘鐗噟杞处|璇煶):/)) {
+                        if (part.match(/^\[(表情包|发送图片|转账|语音):/)) {
                             refinedMessages.push(part);
                         } else {
-                            // 绾枃瀛楋紝鎸夊彞鍙?鎰熷徆鍙?闂彿/鎹㈣绗︽媶鍒嗘垚鐙珛鐨勭煭鍙ユ皵娉?
-                            let sentences = part.split(/([銆傦紒锛焅n]+)/g);
+                            // 纯文字，按句号/感叹号/问号/换行符拆分成独立的短句气泡
+                            let sentences = part.split(/([。！？\n]+)/g);
                             let currentSentence = '';
                             
                             for (let i = 0; i < sentences.length; i++) {
                                 let s = sentences[i];
-                                if (s.match(/^[銆傦紒锛焅n]+$/)) {
+                                if (s.match(/^[。！？\n]+$/)) {
                                     currentSentence += s.replace(/\n/g, ''); 
                                     if (currentSentence.trim()) {
                                         refinedMessages.push(currentSentence.trim());
@@ -5114,7 +5141,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
                 if (refinedMessages.length === 0) return;
 
-                // 鍑嗗琛ㄦ儏鍖呮暟鎹敤浜庢浛鎹?
+                // 准备表情包数据用于替换
                 let boundStickers = [];
                 if (profile.stickerGroupId) {
                     const group = stickerGroups.find(g => g.id === profile.stickerGroupId);
@@ -5129,21 +5156,21 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
                     let msgText = refinedMessages[index];
                     
-                    // 琛ㄦ儏鍖呮浛鎹㈤€昏緫
+                    // 表情包替换逻辑
                     if (boundStickers.length > 0) {
-                        let matchSticker = msgText.match(/^\[琛ㄦ儏鍖?(.*?)\]$/);
+                        let matchSticker = msgText.match(/^\[表情包:(.*?)\]$/);
                         if (matchSticker) {
                             const name = matchSticker[1];
                             const sticker = boundStickers.find(s => s.name === name);
                             if (sticker) {
-                                msgText = `<img src="${sticker.url}" alt="[琛ㄦ儏鍖?${sticker.name}]" class="chat-sent-image">`;
+                                msgText = `<img src="${sticker.url}" alt="[表情包:${sticker.name}]" class="chat-sent-image">`;
                             }
                         } else {
-                            // 鏂囨湰涓贩鏉傝〃鎯呭寘锛堣櫧鐒朵笂闈㈠凡缁忔媶鍒嗕簡锛屼絾浠ラ槻涓囦竴锛?
-                            msgText = msgText.replace(/\[琛ㄦ儏鍖?(.*?)\]/g, (match, name) => {
+                            // 文本中混杂表情包（虽然上面已经拆分了，但以防万一）
+                            msgText = msgText.replace(/\[表情包:(.*?)\]/g, (match, name) => {
                                 const sticker = boundStickers.find(s => s.name === name);
                                 if (sticker) {
-                                    return `<img src="${sticker.url}" alt="[琛ㄦ儏鍖?${sticker.name}]" style="max-width:120px; border-radius:8px;">`;
+                                    return `<img src="${sticker.url}" alt="[表情包:${sticker.name}]" style="max-width:120px; border-radius:8px;">`;
                                 }
                                 return match;
                             });
@@ -5151,13 +5178,13 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                     }
                     
                     if (document.visibilityState === 'hidden') {
-                        // 濡傛灉鍦ㄥ悗鍙帮紝涓嶇敤寤惰繜锛屽叏閮ㄥ揩閫熷鐞嗗畬锛岀敱搴曞眰 sendMsg 澶勭悊寮圭獥
-                        // 鍚庡彴鐩存帴涓€娆℃€у彂瀹屾墍鏈夊鐞嗗ソ鐨勬秷鎭?
-                        // 娉ㄦ剰锛氳繖閲岄€掑綊浼氬鑷寸灛闂村彂瀹?
+                        // 如果在后台，不用延迟，全部快速处理完，由底层 sendMsg 处理弹窗
+                        // 后台直接一次性发完所有处理好的消息
+                        // 注意：这里递归会导致瞬间发完
                         sendMsg('them', msgText, contactId);
                         processNextBackgroundMessage(index + 1); 
                     } else {
-                        // 濡傛灉鍥炲埌浜嗗墠鍙帮紝鎭㈠鏅€氱殑閫愭潯灞曠幇
+                        // 如果回到了前台，恢复普通的逐条展现
                         sendMsg('them', msgText, contactId);
                         if (index < refinedMessages.length - 1) {
                             setTimeout(() => processNextBackgroundMessage(index + 1), 2000 + Math.random() * 2000);
@@ -5173,7 +5200,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
     }
 
-    // === 鎴戠殑椤甸潰閫昏緫 ===
+    // === 我的页面逻辑 ===
     const uploadMineAvatar = document.getElementById('upload-mine-avatar');
     const mineAvatarPreview = document.getElementById('mine-avatar-preview');
     const mineStatusBtn = document.getElementById('mine-status-btn');
@@ -5217,7 +5244,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // === 鐘舵€侀€夋嫨閫昏緫 ===
+    // === 状态选择逻辑 ===
     const statusSelectModal = document.getElementById('status-select-modal');
     const closeStatusModal = document.getElementById('close-status-modal');
     
@@ -5290,7 +5317,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // === 浣欓椤甸潰閫昏緫 ===
+    // === 余额页面逻辑 ===
     const mineMenuBalanceBtn = document.getElementById('mine-menu-balance');
     const balancePage = document.getElementById('balance-page');
     const closeBalanceBtn = document.getElementById('close-balance-btn');
@@ -5299,10 +5326,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     function updateBalanceUI() {
         document.getElementById('balance-display-amount').innerText = balanceData.balance.toFixed(2);
-        document.getElementById('vault-card-balance').innerText = '楼 ' + balanceData.balance.toFixed(2);
+        document.getElementById('vault-card-balance').innerText = '¥ ' + balanceData.balance.toFixed(2);
         
-        document.getElementById('dailybook-budget-display').innerHTML = `楼 ${balanceData.balance.toFixed(2)} <span class="ledger-budget-total">/ 楼 ${balanceData.budget.toFixed(2)}</span>`;
-        document.getElementById('wish-bottle-val').innerText = '楼 ' + balanceData.wish.toFixed(2);
+        document.getElementById('dailybook-budget-display').innerHTML = `¥ ${balanceData.balance.toFixed(2)} <span class="ledger-budget-total">/ ¥ ${balanceData.budget.toFixed(2)}</span>`;
+        document.getElementById('wish-bottle-val').innerText = '¥ ' + balanceData.wish.toFixed(2);
         
         let wishPercent = balanceData.wish > 0 ? (balanceData.balance / balanceData.wish) * 100 : 0;
         wishPercent = Math.min(100, Math.max(0, wishPercent));
@@ -5311,8 +5338,8 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const historyList = document.getElementById('vault-history-list');
         const timelineList = document.getElementById('dailybook-timeline');
         if (balanceData.records.length === 0) {
-            historyList.innerHTML = '<div class="empty-state" style="padding: 30px 0;"><p style="font-size: 13px; color: #aaa;">鏆傛棤铏氭嫙浜ゆ槗璁板綍銆?/p></div>';
-            timelineList.innerHTML = '<div class="empty-state" style="padding: 30px 0; grid-column: 1/-1;"><p style="font-size: 13px; color: #aaa; font-style: normal;">闄堝垪棣嗛噷绌虹┖濡備篃銆?/p></div>';
+            historyList.innerHTML = '<div class="empty-state" style="padding: 30px 0;"><p style="font-size: 13px; color: #aaa;">暂无虚拟交易记录。</p></div>';
+            timelineList.innerHTML = '<div class="empty-state" style="padding: 30px 0; grid-column: 1/-1;"><p style="font-size: 13px; color: #aaa; font-style: normal;">陈列馆里空空如也。</p></div>';
         } else {
             historyList.innerHTML = '';
             timelineList.innerHTML = '';
@@ -5324,7 +5351,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 historyList.innerHTML += `
                     <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #eaeaea; background:#fff; border-radius:12px; margin-bottom:10px;">
                         <div style="display:flex; flex-direction:column; gap:4px;">
-                            <span style="font-size:14px; font-weight:600;">${rec.type === 'resist' ? '蹇嶄綇浜嗘秷璐? : rec.category}</span>
+                            <span style="font-size:14px; font-weight:600;">${rec.type === 'resist' ? '忍住了消费' : rec.category}</span>
                             <span style="font-size:11px; color:#888;">${dateStr} ${rec.note ? '| '+rec.note : ''}</span>
                         </div>
                         <div style="font-size:16px; font-weight:600; color:${rec.type === 'resist' ? '#07c160' : '#111'}">
@@ -5336,11 +5363,11 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
                 // Timeline List (DailyBook)
                 timelineList.innerHTML += `
                     <div class="object-card ${rec.type === 'resist' ? 'resisted' : ''}" style="margin-bottom:10px;">
-                        <div class="object-card-icon">${rec.type === 'resist' ? '馃洝锔? : '馃泹锔?}</div>
+                        <div class="object-card-icon">${rec.type === 'resist' ? '🛡️' : '🛍️'}</div>
                         <div class="object-card-info">
                             <div class="object-card-cat">${rec.category}</div>
-                            <div class="object-card-note">${rec.note || '鏃犲娉?}</div>
-                            <div class="object-card-amount">楼 ${rec.amount.toFixed(2)}</div>
+                            <div class="object-card-note">${rec.note || '无备注'}</div>
+                            <div class="object-card-amount">¥ ${rec.amount.toFixed(2)}</div>
                         </div>
                         <div class="object-card-date">${dateStr}</div>
                         ${rec.type === 'resist' ? '<div class="resisted-badge">RESISTED</div>' : ''}
@@ -5350,7 +5377,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         }
         
         const minePreview = document.getElementById('mine-balance-preview');
-        if (minePreview) minePreview.innerText = '楼' + balanceData.balance.toFixed(2);
+        if (minePreview) minePreview.innerText = '¥' + balanceData.balance.toFixed(2);
     }
 
     window.updateWalletPreview = updateBalanceUI;
@@ -5370,7 +5397,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     // Set Budget
     document.getElementById('set-budget-btn')?.addEventListener('click', () => {
-        const val = prompt('璁剧疆鏈堝害棰勭畻闄愰 (楼):', balanceData.budget);
+        const val = prompt('设置月度预算限额 (¥):', balanceData.budget);
         if (val !== null && !isNaN(val) && Number(val) >= 0) {
             balanceData.budget = Number(val);
             localStorage.setItem('my_balance_data', JSON.stringify(balanceData));
@@ -5380,7 +5407,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
 
     // Set Wish
     document.getElementById('set-wish-btn')?.addEventListener('click', () => {
-        const val = prompt('璁剧疆蹇冩効鐡剁洰鏍囬噾棰?(楼):', balanceData.wish);
+        const val = prompt('设置心愿瓶目标金额 (¥):', balanceData.wish);
         if (val !== null && !isNaN(val) && Number(val) >= 0) {
             balanceData.wish = Number(val);
             localStorage.setItem('my_balance_data', JSON.stringify(balanceData));
@@ -5393,7 +5420,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const amt = document.getElementById('expense-amount').value;
         const cat = document.getElementById('expense-category').value;
         const note = document.getElementById('expense-note').value;
-        if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('璇疯緭鍏ユ湁鏁堥噾棰?);
+        if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('请输入有效金额');
         
         balanceData.balance -= Number(amt);
         balanceData.records.push({
@@ -5403,7 +5430,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         updateBalanceUI();
         document.getElementById('expense-amount').value = '';
         document.getElementById('expense-note').value = '';
-        alert('璁拌处鎴愬姛锛?);
+        alert('记账成功！');
     });
 
     // Add Resist
@@ -5411,7 +5438,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         const amt = document.getElementById('expense-amount').value;
         const cat = document.getElementById('expense-category').value;
         const note = document.getElementById('expense-note').value;
-        if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('璇疯緭鍏ユ湁鏁堥噾棰?);
+        if (!amt || isNaN(amt) || Number(amt) <= 0) return alert('请输入有效金额');
         
         balanceData.balance += Number(amt);
         balanceData.records.push({
@@ -5421,10 +5448,10 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         updateBalanceUI();
         document.getElementById('expense-amount').value = '';
         document.getElementById('expense-note').value = '';
-        alert('鎴愬姛蹇嶄綇娑堣垂锛佺瓑鍚岃祫閲戝凡瀛樺叆閲戝簱锛?);
+        alert('成功忍住消费！等同资金已存入金库！');
     });
 
-    // === 瀵规柟鐘舵€佹煡鐪嬮€昏緫 ===
+    // === 对方状态查看逻辑 ===
     const convSimpleStatusArea = document.getElementById('conv-simple-status-area');
     const contactStatusModal = document.getElementById('contact-status-modal');
     const contactStatusText = document.getElementById('contact-status-text');
@@ -5439,9 +5466,9 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             const profile = roleProfiles[currentActiveContactId] || {};
             
             if (csAvatar) csAvatar.style.backgroundImage = `url('${contact.avatar || ''}')`;
-            if (csName) csName.innerText = contact.name || '鏈懡鍚?;
+            if (csName) csName.innerText = contact.name || '未命名';
             
-            const currentStatus = profile.lastState || '鍦ㄧ嚎 - WiFi';
+            const currentStatus = profile.lastState || '在线 - WiFi';
             if (contactStatusText) contactStatusText.innerHTML = `<span class="status-dot"></span> ${currentStatus}`;
             
             if (contactStatusModal) {
@@ -5455,7 +5482,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             e.stopPropagation();
             if (!currentActiveContactId) return;
             const profile = roleProfiles[currentActiveContactId] || {};
-            const currentStatus = profile.lastState || '鍦ㄧ嚎 - WiFi';
+            const currentStatus = profile.lastState || '在线 - WiFi';
             
             const data = JSON.parse(localStorage.getItem('mine_profile_data') || '{}');
             data.status = currentStatus;
@@ -5463,7 +5490,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
             
             if (mineCurrentStatusText) mineCurrentStatusText.innerText = currentStatus;
             
-            alert('宸茶涓虹浉鍚岀姸鎬侊紒');
+            alert('已设为相同状态！');
             if (contactStatusModal) contactStatusModal.classList.remove('active');
         });
     }
@@ -5475,7 +5502,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
     
-    // 鐐瑰嚮鑳屾櫙鍏抽棴寮圭獥
+    // 点击背景关闭弹窗
     const closeContactStatusBg = document.getElementById('close-contact-status');
     if (closeContactStatusBg) {
         closeContactStatusBg.addEventListener('click', () => {
@@ -5489,7 +5516,7 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
         });
     }
 
-    // 鏆撮湶鏍稿績鎺ュ彛渚涘叾浠栨枃浠惰皟鐢?
+    // 暴露核心接口供其他文件调用
     window.ChatApp = {
         get currentActiveContactId() { return currentActiveContactId; },
         contacts: contacts,
@@ -5559,10 +5586,3 @@ let systemPrompt = `浣犳壆婕旇鑹诧細${contact.name}銆?
     });
 
 });
-
-
-
-
-
-
-
