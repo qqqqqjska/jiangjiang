@@ -41,22 +41,32 @@
     }
 
     /* PWA Standalone Mode Adjustments (Only affects when launched from Home Screen) */
-    body.pwa-standalone {
+    body.pwa-standalone,
+    body.ios-standalone {
         padding: 0;
         width: 100vw;
+        height: 100vh;
+        height: -webkit-fill-available;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
         overflow: hidden;
         box-sizing: border-box;
+        justify-content: flex-start;
+        align-items: stretch;
     }
     
-    body.pwa-standalone #phone-screen {
+    body.pwa-standalone #phone-screen,
+    body.ios-standalone #phone-screen {
         width: 100%;
+        height: 100vh;
+        height: -webkit-fill-available;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
         max-width: 100%;
         max-height: none;
-        position: relative;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: auto;
+        position: fixed;
+        inset: 0;
+        margin: 0;
         border-radius: 0;
     }
 
@@ -105,9 +115,12 @@
                 border: 1px solid rgba(0,0,0,0.05);
                 margin: auto;
             }
-            body.pwa-standalone .phone-screen {
+            body.pwa-standalone .phone-screen,
+            body.ios-standalone .phone-screen {
                 height: 100vh;
                 height: -webkit-fill-available;
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
                 border-radius: 0;
                 box-shadow: none;
                 border: none;
