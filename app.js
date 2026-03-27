@@ -12,6 +12,37 @@ function setupIOSFullScreen() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
 
+    function updateViewportHeight() {
+        const heightCandidates = [window.innerHeight, document.documentElement.clientHeight];
+
+        if (window.visualViewport && Number.isFinite(window.visualViewport.height)) {
+            heightCandidates.push(window.visualViewport.height);
+        }
+
+        const viewportHeight = Math.max(
+            ...heightCandidates
+                .map(value => Math.round(Number(value) || 0))
+                .filter(value => value > 0)
+        );
+
+        if (!viewportHeight) return;
+
+        const viewportValue = `${viewportHeight}px`;
+        document.documentElement.style.setProperty('--app-height', viewportValue);
+        document.documentElement.style.setProperty('height', viewportValue);
+        document.documentElement.style.setProperty('min-height', viewportValue);
+        document.documentElement.style.setProperty('max-height', viewportValue);
+        document.body.style.setProperty('height', viewportValue);
+        document.body.style.setProperty('min-height', viewportValue);
+        document.body.style.setProperty('max-height', viewportValue);
+
+        document.querySelectorAll('#phone-screen, .phone-screen, #home-screen-page, #beautify-page, #chat-app-page, #add-contact-page, #settings-page, #api-settings-page, #nai-settings-page, #keep-alive-settings-page, #worldbook-page, #sticker-mgr-page, #chat-conversation-page, #role-profile-page, #moments-feed-page').forEach(element => {
+            element.style.setProperty('height', viewportValue, 'important');
+            element.style.setProperty('min-height', viewportValue, 'important');
+            element.style.setProperty('max-height', viewportValue, 'important');
+        });
+    }
+
     if (isInStandaloneMode()) {
         document.body.classList.add('pwa-standalone');
     }
@@ -24,6 +55,19 @@ function setupIOSFullScreen() {
             meta.name = 'apple-mobile-web-app-capable';
             meta.content = 'yes';
             document.head.appendChild(meta);
+        }
+    }
+
+    if (isIOS() || isInStandaloneMode()) {
+        updateViewportHeight();
+        window.addEventListener('load', () => setTimeout(updateViewportHeight, 0));
+        window.addEventListener('resize', updateViewportHeight);
+        window.addEventListener('orientationchange', () => setTimeout(updateViewportHeight, 120));
+        window.addEventListener('pageshow', () => setTimeout(updateViewportHeight, 0));
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateViewportHeight);
+            window.visualViewport.addEventListener('scroll', updateViewportHeight);
         }
     }
 
